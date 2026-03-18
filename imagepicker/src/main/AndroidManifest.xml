@@ -8,7 +8,6 @@
 
     <!-- API 32-33: READ_EXTERNAL_STORAGE (partial media access not available) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <!-- API 34+: Granular media permission -->
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />

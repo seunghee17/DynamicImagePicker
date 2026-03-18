@@ -18,8 +18,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -55,7 +55,7 @@ fun ImagePickerScreen(
     var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+        contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
         hasRequestedPermission = true
         viewModel.handleIntent(
@@ -99,7 +99,7 @@ fun ImagePickerScreen(
                 }
                 ImagePickerEffect.RequestPermission -> {
                     hasRequestedPermission = true
-                    permissionLauncher.launch(requiredPermission())
+                    permissionLauncher.launch(requestedPermissionsForPicker())
                 }
                 ImagePickerEffect.NavigateToSettings -> openAppSettings(context)
                 is ImagePickerEffect.ReturnResult -> onResult(effect.result)
@@ -127,11 +127,28 @@ fun ImagePickerScreen(
     }
 }
 
-private fun requiredPermission(): String {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_IMAGES
-    } else {
+private fun requestedPermissionsForPicker(): Array<String> {
+    return when {
+        Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 -> {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+            )
+        }
+        else -> {
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        }
+    }
+}
+
+private fun fullAccessPermission(): String {
+    return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
         Manifest.permission.READ_EXTERNAL_STORAGE
+    } else {
+        Manifest.permission.READ_MEDIA_IMAGES
     }
 }
 
@@ -140,26 +157,29 @@ private fun resolvePermissionStatus(
     hasRequestedPermission: Boolean
 ): PermissionStatus {
     val activity = context.findActivity()
-    val mediaPermission = requiredPermission()
-    val mediaGranted = ContextCompat.checkSelfPermission(context, mediaPermission) == PackageManager.PERMISSION_GRANTED
+    val fullAccessPermission = fullAccessPermission()
+    val hasFullAccess = ContextCompat.checkSelfPermission(
+        context,
+        fullAccessPermission
+    ) == PackageManager.PERMISSION_GRANTED
 
-    if (mediaGranted) {
+    if (hasFullAccess) {
         return PermissionStatus.GRANTED
     }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-        val partialGranted = ContextCompat.checkSelfPermission(
+        val hasSelectedPhotoAccess = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
         ) == PackageManager.PERMISSION_GRANTED
 
-        if (partialGranted) {
+        if (hasSelectedPhotoAccess) {
             return PermissionStatus.PARTIALLY_GRANTED
         }
     }
 
     val shouldShowRationale = activity?.let {
-        ActivityCompat.shouldShowRequestPermissionRationale(it, mediaPermission)
+        ActivityCompat.shouldShowRequestPermissionRationale(it, fullAccessPermission)
     } ?: false
 
     return if (hasRequestedPermission && !shouldShowRationale) {
