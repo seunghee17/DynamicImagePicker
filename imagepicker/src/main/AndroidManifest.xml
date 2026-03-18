@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- API 26-28: READ_EXTERNAL_STORAGE -->
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
-
-    <!-- API 29-32: READ_EXTERNAL_STORAGE (partial media access not available) -->
+    <!-- API 26-32: READ_EXTERNAL_STORAGE -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-    <!-- API 33+: Granular media permission -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- API 32-33: READ_EXTERNAL_STORAGE (partial media access not available) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+    <!-- API 34+: Granular media permission -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
 </manifest>
