@@ -60,6 +60,7 @@ class ImagePickerViewModel(
         }
     }
 
+    /// 계속해서 MediaStore 상태 반영해서 실시간 갱신하기
     private fun observeAlbums() {
         // 중복 Flow 구독 방지
         if (albumsObserved) return

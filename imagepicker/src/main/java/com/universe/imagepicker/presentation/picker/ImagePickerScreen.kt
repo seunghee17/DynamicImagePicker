@@ -20,11 +20,12 @@ import com.universe.imagepicker.presentation.picker.viewmodel.ImagePickerViewMod
 
 /**
  * 라이브러리 최상위 Composable.
- * 권한 상태에 따라 PermissionScreen 또는 GalleryScreen으로 분기한다.
+ * 해당 화면이 표시되기 전 권한 상태 확인후 미허용시 진입 자체를 하지 않는다.
  */
 @Composable
 fun ImagePickerScreen(
     config: ImagePickerConfig,
+    permissionStatus: PermissionStatus,
     onResult: (PickerResult) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
@@ -46,11 +47,16 @@ fun ImagePickerScreen(
     //     }
     // }
 
-    // TODO: state 및 viewModel 연동 후 아래 임시 구현 교체
-    PermissionScreen(
-        permissionStatus = PermissionStatus.DENIED,
-        onRequestPermission = {},
-        onOpenSettings = {},
-        modifier = modifier
-    )
+    if(permissionStatus == PermissionStatus.GRANTED) {
+        //GalleryScreen()
+
+    } else {
+        PermissionScreen(
+            permissionStatus = permissionStatus,
+            onRequestPermission = {},
+            onOpenSettings = {},
+            modifier = modifier
+        )
+    }
+
 }

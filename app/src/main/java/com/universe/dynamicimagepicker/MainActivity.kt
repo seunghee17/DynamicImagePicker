@@ -10,14 +10,23 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.presentation.gallery.GalleryScreen
+import com.universe.imagepicker.presentation.picker.ImagePickerScreen
 
 class MainActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            ImagePickerScreen(
+                config = ImagePickerConfig(
 
+                ),
+                onResult = TODO(),
+                onCancel = TODO(),
+                modifier = Modifier
+            )
         }
     }
 }
