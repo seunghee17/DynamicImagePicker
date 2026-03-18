@@ -8,6 +8,9 @@ import com.universe.imagepicker.domain.model.PickerResult
  */
 sealed class ImagePickerEffect {
     object NavigateToSettings : ImagePickerEffect()
+    object RequestPermission : ImagePickerEffect()
+    data class CheckPermission(val source: PermissionCheckSource) : ImagePickerEffect()
+
     data class NavigateToEditor(val image: GalleryImage) : ImagePickerEffect()
     data class ReturnResult(val result: PickerResult) : ImagePickerEffect()
     object Cancelled : ImagePickerEffect()

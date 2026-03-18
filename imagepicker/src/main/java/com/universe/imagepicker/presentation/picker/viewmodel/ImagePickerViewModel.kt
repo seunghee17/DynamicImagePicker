@@ -11,6 +11,7 @@ import com.universe.imagepicker.domain.usecase.GetImagesInAlbumUseCase
 import com.universe.imagepicker.presentation.picker.ImagePickerEffect
 import com.universe.imagepicker.presentation.picker.ImagePickerIntent
 import com.universe.imagepicker.presentation.picker.ImagePickerState
+import com.universe.imagepicker.presentation.picker.PermissionCheckSource
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +25,11 @@ import kotlinx.coroutines.launch
 class ImagePickerViewModel(
     private val getAlbums: GetGalleryAlbumsUseCase,
     private val getImagesInAlbum: GetImagesInAlbumUseCase,
+    maxSelectionCount: Int,
     //private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ImagePickerState())
+    private val _state = MutableStateFlow(ImagePickerState(maxSelectionCount = maxSelectionCount))
     val state: StateFlow<ImagePickerState> = _state.asStateFlow()
 
     /** 각 Effect는 Channel을 통해 정확히 1회만 소비된다. */
@@ -37,26 +39,38 @@ class ImagePickerViewModel(
     // observeAlbums 중복 호출 방지
     private var albumsObserved = false
 
-    init {
-        observeAlbums()
-    }
-
     fun handleIntent(intent: ImagePickerIntent) {
         when (intent) {
-            is ImagePickerIntent.OnPermissionResult -> onPermissionResult(intent.status)
-            is ImagePickerIntent.RequestPermission -> { /* UI 레이어에서 처리 */ }
-            is ImagePickerIntent.OpenAppSettings -> sendEffect(ImagePickerEffect.NavigateToSettings)
-            is ImagePickerIntent.SelectAlbum -> loadImages(intent.album.id)
+            ImagePickerIntent.Initialize -> sendEffect(
+                ImagePickerEffect.CheckPermission(PermissionCheckSource.INITIAL)
+            )
+            ImagePickerIntent.OnHostResumed -> sendEffect(
+                ImagePickerEffect.CheckPermission(PermissionCheckSource.RESUME)
+            )
+            ImagePickerIntent.RequestPermissionClick -> sendEffect(ImagePickerEffect.RequestPermission)
+            ImagePickerIntent.OpenSettingsClick -> sendEffect(ImagePickerEffect.NavigateToSettings)
+            is ImagePickerIntent.OnPermissionEvaluated -> handlePermissionEvaluated(
+                status = intent.status,
+                source = intent.source
+            )
+            is ImagePickerIntent.SelectAlbum -> {
+                _state.update { it.copy(selectedAlbum = intent.album) }
+                loadImages(intent.album.id)
+            }
             is ImagePickerIntent.ToggleImageSelection -> toggleSelection(intent.image)
             is ImagePickerIntent.StartDragSelection -> startDrag(intent.image)
             is ImagePickerIntent.UpdateDragSelection -> updateDrag(intent.image)
-            is ImagePickerIntent.EndDragSelection -> _state.update { it.copy(isDragSelecting = false, dragSelectAnchorId = null) }
+            ImagePickerIntent.EndDragSelection -> {
+                _state.update { it.copy(isDragSelecting = false, dragSelectAnchorId = null) }
+            }
             is ImagePickerIntent.OpenEditor -> sendEffect(ImagePickerEffect.NavigateToEditor(intent.image))
-            is ImagePickerIntent.OnEditResult -> applyEditResult(intent.pickedImage)  // 편집 결과 map에 저장
-            is ImagePickerIntent.ConfirmSelection -> confirmSelection()
-            is ImagePickerIntent.Cancel -> sendEffect(ImagePickerEffect.Cancelled)
-            is ImagePickerIntent.DismissError -> _state.update { it.copy(error = null) }
-            is ImagePickerIntent.DismissSelectionLimitMessage -> _state.update { it.copy(selectionLimitMessage = null) }
+            is ImagePickerIntent.OnEditResult -> applyEditResult(intent.pickedImage)
+            ImagePickerIntent.ConfirmSelection -> confirmSelection()
+            ImagePickerIntent.Cancel -> sendEffect(ImagePickerEffect.Cancelled)
+            ImagePickerIntent.DismissError -> _state.update { it.copy(error = null) }
+            ImagePickerIntent.DismissSelectionLimitMessage -> {
+                _state.update { it.copy(selectionLimitMessage = null) }
+            }
         }
     }
 
@@ -90,10 +104,37 @@ class ImagePickerViewModel(
         }
     }
 
-    private fun onPermissionResult(status: PermissionStatus) {
-        _state.update { it.copy(permissionStatus = status) }
-        if (status == PermissionStatus.GRANTED) {
-            observeAlbums()
+    private fun handlePermissionEvaluated(
+        status: PermissionStatus,
+        source: PermissionCheckSource
+    ) {
+        _state.update { current ->
+            current.copy(
+                permissionStatus = status,
+                hasRequestedPermission = current.hasRequestedPermission || source == PermissionCheckSource.PERMISSION_RESULT
+            )
+        }
+
+        when (status) {
+            PermissionStatus.GRANTED -> observeAlbums()
+            PermissionStatus.PARTIALLY_GRANTED -> {
+                if (source != PermissionCheckSource.RESUME) {
+                    sendEffect(ImagePickerEffect.RequestPermission)
+                }
+            }
+            PermissionStatus.DENIED -> {
+                if (source == PermissionCheckSource.INITIAL || source == PermissionCheckSource.RETRY_BUTTON) {
+                    sendEffect(ImagePickerEffect.RequestPermission)
+                }
+            }
+            PermissionStatus.PERMANENTLY_DENIED -> {
+                if (
+                    source == PermissionCheckSource.PERMISSION_RESULT ||
+                    source == PermissionCheckSource.RETRY_BUTTON
+                ) {
+                    sendEffect(ImagePickerEffect.NavigateToSettings)
+                }
+            }
         }
     }
 

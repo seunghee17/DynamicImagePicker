@@ -1,62 +1,188 @@
 package com.universe.imagepicker.presentation.picker
 
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.domain.model.PermissionStatus
 import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.presentation.gallery.GalleryScreen
-import com.universe.imagepicker.presentation.permission.PermissionScreen
 import com.universe.imagepicker.presentation.picker.viewmodel.ImagePickerViewModel
 import com.universe.imagepicker.presentation.picker.viewmodel.ImagePickerViewModelFactory
+import kotlinx.coroutines.flow.collectLatest
 
-/**
- * 라이브러리 최상위 Composable.
- * 해당 화면이 표시되기 전 권한 상태 확인후 미허용시 진입 자체를 하지 않는다.
- */
 @Composable
 fun ImagePickerScreen(
     config: ImagePickerConfig,
-    permissionStatus: PermissionStatus,
     onResult: (PickerResult) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // viewModelFactory를 통해 viewmodel 생성하면 viewmodel이 안드로이드 시스템에 의해 안전하게 관리되고 기존 viewmodel 인스턴스 유지하려 노력한다
-    //
-    val viewModel: ImagePickerViewModel = viewModel(factory = ImagePickerViewModelFactory(context = LocalContext.current))
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val viewModel: ImagePickerViewModel = viewModel(
+        factory = ImagePickerViewModelFactory(
+            context = context,
+            config = config
+        )
+    )
+    val state by viewModel.state.collectAsState()
+    var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
 
-    // Effect 수집 (일회성 이벤트 처리)
-    // LaunchedEffect(Unit) {
-    //     viewModel.effect.collect { effect ->
-    //         when (effect) {
-    //             is ImagePickerEffect.ReturnResult -> onResult(effect.result)
-    //             is ImagePickerEffect.Cancelled -> onCancel()
-    //             is ImagePickerEffect.NavigateToSettings -> { /* 설정 화면 이동 */ }
-    //             is ImagePickerEffect.NavigateToEditor -> { /* 에디터 화면 이동 */ }
-    //             is ImagePickerEffect.ShowToast -> { /* 토스트 표시 */ }
-    //         }
-    //     }
-    // }
-
-    if(permissionStatus == PermissionStatus.GRANTED) {
-        //GalleryScreen()
-
-    } else {
-        PermissionScreen(
-            permissionStatus = permissionStatus,
-            onRequestPermission = {},
-            onOpenSettings = {},
-            modifier = modifier
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        hasRequestedPermission = true
+        viewModel.handleIntent(
+            ImagePickerIntent.OnPermissionEvaluated(
+                status = resolvePermissionStatus(
+                    context = context,
+                    hasRequestedPermission = hasRequestedPermission
+                ),
+                source = PermissionCheckSource.PERMISSION_RESULT
+            )
         )
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.handleIntent(ImagePickerIntent.Initialize)
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.handleIntent(ImagePickerIntent.OnHostResumed)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(viewModel, context, hasRequestedPermission) {
+        viewModel.effect.collectLatest { effect ->
+            when (effect) {
+                is ImagePickerEffect.CheckPermission -> {
+                    viewModel.handleIntent(
+                        ImagePickerIntent.OnPermissionEvaluated(
+                            status = resolvePermissionStatus(
+                                context = context,
+                                hasRequestedPermission = hasRequestedPermission
+                            ),
+                            source = effect.source
+                        )
+                    )
+                }
+                ImagePickerEffect.RequestPermission -> {
+                    hasRequestedPermission = true
+                    permissionLauncher.launch(requiredPermission())
+                }
+                ImagePickerEffect.NavigateToSettings -> openAppSettings(context)
+                is ImagePickerEffect.ReturnResult -> onResult(effect.result)
+                ImagePickerEffect.Cancelled -> onCancel()
+                is ImagePickerEffect.ShowToast -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+                is ImagePickerEffect.NavigateToEditor -> Unit
+            }
+        }
+    }
+
+    if (state.permissionStatus == PermissionStatus.GRANTED) {
+        GalleryScreen(
+            modifier = modifier,
+            state = state,
+            onIntent = viewModel::handleIntent
+        )
+    } else {
+        PermissionFallbackContent(
+            modifier = modifier,
+            state = state,
+            onIntent = viewModel::handleIntent
+        )
+    }
+}
+
+private fun requiredPermission(): String {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+}
+
+private fun resolvePermissionStatus(
+    context: Context,
+    hasRequestedPermission: Boolean
+): PermissionStatus {
+    val activity = context.findActivity()
+    val mediaPermission = requiredPermission()
+    val mediaGranted = ContextCompat.checkSelfPermission(context, mediaPermission) == PackageManager.PERMISSION_GRANTED
+
+    if (mediaGranted) {
+        return PermissionStatus.GRANTED
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        val partialGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (partialGranted) {
+            return PermissionStatus.PARTIALLY_GRANTED
+        }
+    }
+
+    val shouldShowRationale = activity?.let {
+        ActivityCompat.shouldShowRequestPermissionRationale(it, mediaPermission)
+    } ?: false
+
+    return if (hasRequestedPermission && !shouldShowRationale) {
+        PermissionStatus.PERMANENTLY_DENIED
+    } else {
+        PermissionStatus.DENIED
+    }
+}
+
+private fun openAppSettings(context: Context) {
+    val intent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", context.packageName, null)
+    ).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(intent)
+}
+
+private tailrec fun Context.findActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
 }

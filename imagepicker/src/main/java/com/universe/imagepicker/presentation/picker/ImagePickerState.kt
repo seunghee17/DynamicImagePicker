@@ -7,6 +7,7 @@ import com.universe.imagepicker.domain.model.PermissionStatus
 
 data class ImagePickerState(
     val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
+    val hasRequestedPermission: Boolean = false,
     val albums: List<GalleryAlbum> = emptyList(),
     val selectedAlbum: GalleryAlbum? = null,
     val images: List<GalleryImage> = emptyList(),

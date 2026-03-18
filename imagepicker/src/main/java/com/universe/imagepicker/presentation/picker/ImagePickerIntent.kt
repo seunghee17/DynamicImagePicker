@@ -6,11 +6,14 @@ import com.universe.imagepicker.domain.model.PickedImage
 import com.universe.imagepicker.domain.model.PermissionStatus
 
 sealed class ImagePickerIntent {
-
-    // 권한
-    object RequestPermission : ImagePickerIntent()
-    object OpenAppSettings : ImagePickerIntent()
-    data class OnPermissionResult(val status: PermissionStatus) : ImagePickerIntent()
+    object Initialize : ImagePickerIntent()
+    object OnHostResumed : ImagePickerIntent()
+    object RequestPermissionClick : ImagePickerIntent()
+    object OpenSettingsClick : ImagePickerIntent()
+    data class OnPermissionEvaluated(
+        val status: PermissionStatus,
+        val source: PermissionCheckSource
+    ) : ImagePickerIntent()
 
     // 앨범
     data class SelectAlbum(val album: GalleryAlbum) : ImagePickerIntent()
@@ -34,4 +37,11 @@ sealed class ImagePickerIntent {
     // 에러 처리
     object DismissError : ImagePickerIntent()
     object DismissSelectionLimitMessage : ImagePickerIntent()
+}
+
+enum class PermissionCheckSource {
+    INITIAL,
+    RESUME,
+    PERMISSION_RESULT,
+    RETRY_BUTTON
 }
