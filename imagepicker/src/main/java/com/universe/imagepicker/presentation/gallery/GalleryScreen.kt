@@ -22,9 +22,8 @@ import com.universe.imagepicker.presentation.picker.ImagePickerIntent
 import com.universe.imagepicker.presentation.picker.ImagePickerState
 import com.universe.imagepicker.presentation.utils.photoGridDragHandler
 
-/**
- * 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
- */
+/// 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
+
 @Composable
 fun GalleryScreen(
     state: ImagePickerState,

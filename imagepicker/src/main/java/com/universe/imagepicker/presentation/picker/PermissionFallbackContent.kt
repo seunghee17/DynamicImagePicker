@@ -15,9 +15,9 @@ import com.universe.imagepicker.domain.model.PermissionStatus
 
 @Composable
 internal fun PermissionFallbackContent(
+    modifier: Modifier = Modifier,
     state: ImagePickerState,
     onIntent: (ImagePickerIntent) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     val message = when (state.permissionStatus) {
         PermissionStatus.PARTIALLY_GRANTED ->

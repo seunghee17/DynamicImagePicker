@@ -97,13 +97,13 @@ fun ImagePickerScreen(
                         )
                     )
                 }
-                ImagePickerEffect.RequestPermission -> {
+                is ImagePickerEffect.RequestPermission -> {
                     hasRequestedPermission = true
                     permissionLauncher.launch(requestedPermissionsForPicker())
                 }
-                ImagePickerEffect.NavigateToSettings -> openAppSettings(context)
+                is ImagePickerEffect.NavigateToSettings -> openAppSettings(context)
                 is ImagePickerEffect.ReturnResult -> onResult(effect.result)
-                ImagePickerEffect.Cancelled -> onCancel()
+                is ImagePickerEffect.Cancelled -> onCancel()
                 is ImagePickerEffect.ShowToast -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
@@ -121,8 +121,8 @@ fun ImagePickerScreen(
     } else {
         PermissionFallbackContent(
             modifier = modifier,
-            state = state,
-            onIntent = viewModel::handleIntent
+            onIntent = viewModel::handleIntent,
+            state = state
         )
     }
 }
