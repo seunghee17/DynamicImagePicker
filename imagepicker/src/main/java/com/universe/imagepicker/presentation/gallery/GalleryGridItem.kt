@@ -63,7 +63,7 @@ fun GalleryGridItem(
                     .background(Color.Black.copy(alpha = 0.3f))
             )
             SelectionBadge(
-                order = selectionOrder!!,
+                order = selectionOrder,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
