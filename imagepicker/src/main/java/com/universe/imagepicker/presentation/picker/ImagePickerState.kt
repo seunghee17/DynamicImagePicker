@@ -14,8 +14,6 @@ data class ImagePickerState(
     /** 선택된 이미지 순서 보존 리스트. index + 1 = 배지 번호 */
     val selectedImages: List<GalleryImage> = emptyList(),
     val isLoadingImages: Boolean = false,
-    val isDragSelecting: Boolean = false,
-    val dragSelectAnchorId: Long? = null,
     val maxSelectionCount: Int = 10,
     val selectionLimitMessage: String? = null,
     val error: String? = null,

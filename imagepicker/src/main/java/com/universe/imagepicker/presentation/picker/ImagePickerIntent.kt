@@ -20,12 +20,9 @@ sealed class ImagePickerIntent {
 
     // 이미지 선택
     data class ToggleImageSelection(val image: GalleryImage) : ImagePickerIntent()
-    data class StartDragSelection(val image: GalleryImage) : ImagePickerIntent()
-    data class UpdateDragSelection(val image: GalleryImage) : ImagePickerIntent()
-    object EndDragSelection : ImagePickerIntent()
 
     // 화면 이동
-    data class OpenEditor(val image: GalleryImage) : ImagePickerIntent()
+    data class OpenEditor(val selectedImages: List<GalleryImage>, val selectImageId: Long) : ImagePickerIntent()
 
     // 편집 결과 수신 (Editor → Picker 복귀 시)
     data class OnEditResult(val pickedImage: PickedImage) : ImagePickerIntent()

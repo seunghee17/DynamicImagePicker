@@ -58,17 +58,12 @@ class ImagePickerViewModel(
                 loadImages(intent.album.id)
             }
             is ImagePickerIntent.ToggleImageSelection -> toggleSelection(intent.image)
-            is ImagePickerIntent.StartDragSelection -> startDrag(intent.image)
-            is ImagePickerIntent.UpdateDragSelection -> updateDrag(intent.image)
-            ImagePickerIntent.EndDragSelection -> {
-                _state.update { it.copy(isDragSelecting = false, dragSelectAnchorId = null) }
-            }
-            is ImagePickerIntent.OpenEditor -> sendEffect(ImagePickerEffect.NavigateToEditor(intent.image))
+            is ImagePickerIntent.OpenEditor -> sendEffect(ImagePickerEffect.NavigateToEditor(galleryImages = _state.value.images))
             is ImagePickerIntent.OnEditResult -> applyEditResult(intent.pickedImage)
-            ImagePickerIntent.ConfirmSelection -> confirmSelection()
-            ImagePickerIntent.Cancel -> sendEffect(ImagePickerEffect.Cancelled)
-            ImagePickerIntent.DismissError -> _state.update { it.copy(error = null) }
-            ImagePickerIntent.DismissSelectionLimitMessage -> {
+            is ImagePickerIntent.ConfirmSelection -> confirmSelection()
+            is ImagePickerIntent.Cancel -> sendEffect(ImagePickerEffect.Cancelled)
+            is ImagePickerIntent.DismissError -> _state.update { it.copy(error = null) }
+            is ImagePickerIntent.DismissSelectionLimitMessage -> {
                 _state.update { it.copy(selectionLimitMessage = null) }
             }
         }
@@ -152,19 +147,6 @@ class ImagePickerViewModel(
             }
             selected.add(image)
             _state.update { it.copy(selectedImages = selected) }
-        }
-    }
-
-    private fun startDrag(image: GalleryImage) {
-        _state.update { it.copy(isDragSelecting = true, dragSelectAnchorId = image.id) }
-        toggleSelection(image)
-    }
-
-    private fun updateDrag(image: GalleryImage) {
-        if (!_state.value.isDragSelecting) return
-        val current = _state.value
-        if (current.selectedImages.none { it.id == image.id }) {
-            toggleSelection(image)
         }
     }
 

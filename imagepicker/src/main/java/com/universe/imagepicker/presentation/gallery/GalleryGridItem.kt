@@ -22,15 +22,15 @@ import com.universe.imagepicker.presentation.component.SelectionBadge
 /**
  * 그리드 내 개별 이미지 아이템.
  * - 탭: 선택/해제 토글
- * - 롱프레스: 드래그 멀티 선택 시작
+ * - 드래그: 드래그 멀티 선택 시작
  * - 선택 시: 배지 번호 및 오버레이 표시
  */
 @Composable
 fun GalleryGridItem(
     image: GalleryImage,
     selectionOrder: Int?,       // null = 미선택, 1 이상 = 선택 순서
+    navigateToEditor: () -> Unit, // 편집 화면으로 이동
     onTap: () -> Unit,
-    onLongPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isSelected = selectionOrder != null
@@ -44,8 +44,11 @@ fun GalleryGridItem(
             )
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap = { onTap() },
-                    onLongPress = { onLongPress() }
+                    onTap = {
+                        // 사진 선택과 편집 화면 이동 동시 동작
+                        onTap()
+                        navigateToEditor()
+                    },
                 )
             }
     ) {
@@ -62,12 +65,13 @@ fun GalleryGridItem(
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.3f))
             )
-            SelectionBadge(
-                order = selectionOrder!!,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-            )
         }
+        SelectionBadge(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp),
+            order = selectionOrder,
+            onTap = onTap,
+        )
     }
 }
