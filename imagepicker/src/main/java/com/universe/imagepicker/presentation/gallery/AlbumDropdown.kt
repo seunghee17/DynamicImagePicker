@@ -6,10 +6,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.universe.imagepicker.domain.model.GalleryAlbum
 
@@ -18,27 +14,28 @@ import com.universe.imagepicker.domain.model.GalleryAlbum
  */
 @Composable
 fun AlbumDropdown(
+    modifier: Modifier = Modifier,
     albums: List<GalleryAlbum>,
+    dropDownExpanded: Boolean,
+    openDropDown: () -> Unit,
+    closeDropDown: () -> Unit,
     selectedAlbum: GalleryAlbum?,
     onAlbumSelected: (GalleryAlbum) -> Unit,
-    modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
     Box(modifier = modifier) {
-        TextButton(onClick = { expanded = true }) {
+        TextButton(onClick = openDropDown) {
             Text(text = selectedAlbum?.name ?: "전체")
         }
         DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+            expanded = dropDownExpanded,
+            onDismissRequest = closeDropDown
         ) {
             albums.forEach { album ->
                 DropdownMenuItem(
                     text = { Text("${album.name} (${album.imageCount})") },
                     onClick = {
                         onAlbumSelected(album)
-                        expanded = false
+                        closeDropDown()
                     }
                 )
             }
