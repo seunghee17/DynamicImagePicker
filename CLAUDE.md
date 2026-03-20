@@ -246,3 +246,140 @@ valisCropped:Boolean=false
 
 ### 6.5 결과 저장 실패
 - 편집 결과 파일 저장 실패 시 재시도 또는 취소 선택지를 제공한다.
+
+---
+
+# 프로젝트 구조 및 작업 가이드
+
+## 모듈 구성
+
+프로젝트는 두 모듈로 구성된다.
+
+- **`:app`** — 라이브러리 사용 방식을 보여주는 샘플 앱 (`com.universe.dynamicimagepicker`)
+- **`:imagepicker`** — 실제 라이브러리 구현체 (`com.universe.imagepicker`)
+
+> 기능 구현은 반드시 `:imagepicker` 모듈에서 수행한다. `:app`은 통합 방식만 보여주며 건드리지 않는 것을 원칙으로 한다.
+
+---
+
+## 아키텍처 패턴: MVI
+
+전체 구조는 **MVI (Model-View-Intent)** 패턴을 따른다.
+
+```
+사용자 액션 → Intent → ViewModel → State 갱신 → Composable 렌더링
+                                  ↓
+                             Effect (Channel) → 일회성 사이드 이펙트
+```
+
+- **State**: UI에 표시할 불변 데이터. ViewModel의 `StateFlow`로 관리한다.
+- **Intent**: 사용자 또는 시스템이 발생시키는 이벤트. sealed class로 정의한다.
+- **Effect**: 화면 이동, 토스트, 권한 요청 등 한 번만 소비되는 이벤트. `Channel`로 관리한다.
+
+---
+
+## 레이어 구성
+
+```
+presentation/
+  picker/          ← 갤러리 선택 화면 (Screen, State, Intent, Effect, ViewModel, Factory)
+  editor/          ← 이미지 편집 화면 (Screen, State, Intent, Effect, ViewModel, Factory)
+  gallery/         ← Gallery Grid 컴포넌트 (GalleryScreen, GalleryGridItem, AlbumDropdown)
+  component/       ← 재사용 UI 컴포넌트 (TopBarWithCount, SelectionBadge)
+  utils/           ← 드래그 멀티 선택 헬퍼 (photoGridDragHandler modifier)
+domain/
+  model/           ← 도메인 모델 (GalleryImage, GalleryAlbum, PickedImage, PickerResult, CropRect, PermissionStatus)
+  repository/      ← Repository 인터페이스 (GalleryRepository, ImageEditRepository)
+  usecase/         ← UseCase (GetGalleryAlbums, GetImagesInAlbum, RotateImage, CropImage, CheckPermission)
+data/
+  source/          ← 데이터 소스 (MediaStoreDataSource, ImageFileDataSource)
+  repository/      ← Repository 구현체 (GalleryRepositoryImpl, ImageEditRepositoryImpl)
+```
+
+---
+
+## 주요 파일 역할
+
+| 파일 | 역할 |
+|------|------|
+| `DynamicImagePicker.kt` | 라이브러리 퍼블릭 진입점. `DynamicImagePicker.Content(config, onResult, onCancel)` 제공 |
+| `ImagePickerConfig.kt` | 라이브러리 설정 (`maxSelectionCount`, `showAlbumSelector`, `allowEditing`) |
+| `ImagePickerScreen.kt` | 권한 처리 + 화면 라우팅 (갤러리/권한 거부 화면 분기) |
+| `GalleryScreen.kt` | 3열 Grid, 드래그 멀티 선택, 상단 바, 선택 제한 스낵바 |
+| `GalleryGridItem.kt` | 썸네일 + 선택 오버레이 + SelectionBadge |
+| `ImagePickerViewModel.kt` | 갤러리 선택 전체 상태 관리, 편집 결과 병합, 최종 결과 반환 |
+| `EditorScreen.kt` | 이미지 편집 UI (회전/크롭) |
+| `EditorViewModel.kt` | 편집 상태 관리. 항상 originalUri 기준으로 회전하여 JPEG 화질 손실 방지 |
+| `MediaStoreDataSource.kt` | MediaStore ContentResolver로 이미지/앨범 조회 (API 26-36 호환) |
+| `ImageFileDataSource.kt` | 비트맵 회전·크롭 처리. 캐시: `context.cacheDir/imagepicker_edits/` |
+| `Utils.kt` | `photoGridDragHandler` Modifier — 롱프레스 후 드래그 멀티 선택 구현 |
+
+---
+
+## 도메인 모델 요약
+
+```kotlin
+// 최종 반환 결과
+data class PickerResult(val items: List<PickedImage>)
+
+data class PickedImage(
+    val originalUri: Uri,
+    val editedUri: Uri? = null,       // 편집 없으면 null
+    val rotationDegrees: Int = 0,
+    val cropRect: CropRect? = null    // isCropped는 cropRect != null 로 판단
+)
+
+// 정규화 크롭 좌표 [0f, 1f]
+data class CropRect(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+    companion object { val FULL = CropRect(0f, 0f, 1f, 1f) }
+}
+
+data class GalleryImage(val id: Long, val uri: Uri, val albumId: String, ...)
+data class GalleryAlbum(val id: String, val name: String, val coverUri: Uri, val imageCount: Int)
+
+enum class PermissionStatus { GRANTED, PARTIALLY_GRANTED, DENIED, PERMANENTLY_DENIED }
+```
+
+---
+
+## 작업 시 접근 방법
+
+### 1. 새 기능 추가
+1. `domain/model/`에 필요한 데이터 모델 추가 또는 기존 모델 수정
+2. 필요한 경우 `domain/repository/` 인터페이스에 메서드 추가
+3. `domain/usecase/`에 UseCase 추가
+4. `data/source/` 및 `data/repository/`에 구현체 반영
+5. 해당 화면의 `*Intent`, `*State`, `*Effect` sealed class에 항목 추가
+6. ViewModel의 `handleIntent()`에 처리 로직 추가
+7. Composable에서 State/Effect 소비
+
+### 2. UI 수정
+- 재사용 컴포넌트는 `presentation/component/`에 위치
+- 화면별 컴포넌트는 해당 화면 패키지 내에서 관리 (`picker/`, `gallery/`, `editor/`)
+- Compose 상태는 ViewModel의 `StateFlow`를 `collectAsStateWithLifecycle()`로 수집
+
+### 3. 드래그 선택 수정
+- `presentation/utils/Utils.kt`의 `photoGridDragHandler` Modifier 수정
+- 롱프레스 감지 → 드래그 시작 → 아이템 하이트박스 기반 선택 순서로 동작
+
+### 4. 편집 기능 수정
+- `EditorViewModel`은 항상 `originalUri`를 기준으로 회전을 적용한다 (JPEG 재압축 누적 방지)
+- 크롭은 현재 `previewUri`를 기준으로 적용
+- 편집 완료 시 `PickedImage(editedUri = ..., rotationDegrees = ..., cropRect = ...)`로 반환
+
+### 5. 권한 처리 수정
+- 권한 분기 로직: `ImagePickerScreen.kt`
+- 상태 표현: `PermissionStatus` enum
+- Android 14+ 부분 권한(`READ_MEDIA_VISUAL_USER_SELECTED`)은 `PARTIALLY_GRANTED`로 처리
+
+---
+
+## 빌드 설정 요약
+
+- **compileSdk / targetSdk**: 36
+- **minSdk**: 26
+- **Kotlin**: 2.0.21
+- **Compose BOM**: 2025.05.00
+- **이미지 로딩**: Coil 2.7.0 (`AsyncImage`)
+- **비동기**: Kotlin Coroutines 1.9.0
+- **ViewModel**: AndroidX Lifecycle 2.9.0
