@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.Modifier
+import com.universe.imagepicker.DynamicImagePicker
 import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.presentation.picker.ImagePickerScreen
 
@@ -13,7 +14,7 @@ class MainActivity: ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ImagePickerScreen(
+            DynamicImagePicker(
                 config = ImagePickerConfig(),
                 onResult = {},
                 onCancel = {},
