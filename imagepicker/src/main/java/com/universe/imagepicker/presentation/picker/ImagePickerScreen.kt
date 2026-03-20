@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -17,8 +18,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,7 +35,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.domain.model.PermissionStatus
 import com.universe.imagepicker.domain.model.PickerResult
+import com.universe.imagepicker.presentation.editor.EditorEffect
+import com.universe.imagepicker.presentation.editor.EditorScreen
+import com.universe.imagepicker.presentation.editor.EditorViewModel
+import com.universe.imagepicker.presentation.editor.EditorViewModelFactory
+import com.universe.imagepicker.presentation.gallery.GalleryScreenIntent
 import com.universe.imagepicker.presentation.gallery.GalleryScreen
+import com.universe.imagepicker.presentation.gallery.GalleryScreenViewModel
+import com.universe.imagepicker.presentation.gallery.GalleryScreenViewModelFactory
 import com.universe.imagepicker.presentation.picker.viewmodel.ImagePickerViewModel
 import com.universe.imagepicker.presentation.picker.viewmodel.ImagePickerViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
@@ -46,13 +57,22 @@ fun ImagePickerScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val viewModel: ImagePickerViewModel = viewModel(
-        factory = ImagePickerViewModelFactory(
+        factory = ImagePickerViewModelFactory()
+    )
+    val state by viewModel.state.collectAsState()
+    val galleryViewModel: GalleryScreenViewModel = viewModel(
+        factory = GalleryScreenViewModelFactory(
             context = context,
             config = config
         )
     )
-    val state by viewModel.state.collectAsState()
+    val galleryState by galleryViewModel.state.collectAsState()
     var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
+    var nextEditorEntryId by rememberSaveable { mutableLongStateOf(0L) }
+    var editorDestination by rememberSaveable(stateSaver = editorDestinationSaver()) {
+        mutableStateOf<EditorDestination?>(null)
+    }
+    val saveableStateHolder = rememberSaveableStateHolder()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -83,6 +103,12 @@ fun ImagePickerScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(state.permissionStatus) {
+        if (state.permissionStatus == PermissionStatus.GRANTED) {
+            galleryViewModel.handleIntent(GalleryScreenIntent.Initialize)
+        }
+    }
+
     LaunchedEffect(viewModel, context, hasRequestedPermission) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
@@ -107,17 +133,53 @@ fun ImagePickerScreen(
                 is ImagePickerEffect.ShowToast -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
-                is ImagePickerEffect.NavigateToEditor -> Unit
+                is ImagePickerEffect.NavigateToEditor -> {
+                    editorDestination = EditorDestination(
+                        entryId = nextEditorEntryId,
+                        imageId = effect.image.id,
+                        originalUri = effect.image.uri
+                    )
+                    nextEditorEntryId += 1
+                }
             }
         }
     }
 
     if (state.permissionStatus == PermissionStatus.GRANTED) {
-        GalleryScreen(
-            modifier = modifier,
-            state = state,
-            onIntent = viewModel::handleIntent
-        )
+        if (editorDestination == null) {
+            saveableStateHolder.SaveableStateProvider(key = GALLERY_SCREEN_KEY) {
+                GalleryScreen(
+                    modifier = modifier,
+                    state = galleryState,
+                    onIntent = galleryViewModel::handleIntent,
+                    onOpenEditor = { image ->
+                        viewModel.handleIntent(ImagePickerIntent.OpenEditor(image))
+                    },
+                    onConfirm = {
+                        viewModel.handleIntent(
+                            ImagePickerIntent.ConfirmSelection(galleryViewModel.buildPickerResult())
+                        )
+                    },
+                    onCancel = {
+                        viewModel.handleIntent(ImagePickerIntent.Cancel)
+                    }
+                )
+            }
+        } else {
+            saveableStateHolder.SaveableStateProvider(
+                key = "$EDITOR_SCREEN_KEY-${editorDestination!!.entryId}"
+            ) {
+                EditorRoute(
+                    destination = editorDestination!!,
+                    onEditApplied = { pickedImage ->
+                        galleryViewModel.handleIntent(GalleryScreenIntent.OnEditResult(pickedImage))
+                        editorDestination = null
+                    },
+                    onDismiss = { editorDestination = null },
+                    modifier = modifier
+                )
+            }
+        }
     } else {
         PermissionFallbackContent(
             modifier = modifier,
@@ -126,6 +188,76 @@ fun ImagePickerScreen(
         )
     }
 }
+
+@Composable
+private fun EditorRoute(
+    destination: EditorDestination,
+    onEditApplied: (com.universe.imagepicker.domain.model.PickedImage) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val viewModel: EditorViewModel = viewModel(
+        key = "editor-${destination.entryId}",
+        factory = EditorViewModelFactory(
+            originalUri = destination.originalUri,
+            context = context
+        )
+    )
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(viewModel, context) {
+        viewModel.effect.collectLatest { effect ->
+            when (effect) {
+                is EditorEffect.ReturnEditedImage -> onEditApplied(effect.pickedImage)
+                is EditorEffect.Cancelled -> onDismiss()
+                is EditorEffect.ShowError -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    BackHandler { onDismiss() }
+
+    EditorScreen(
+        state = state,
+        onIntent = viewModel::handleIntent,
+        modifier = modifier
+    )
+}
+
+private data class EditorDestination(
+    val entryId: Long,
+    val imageId: Long,
+    val originalUri: Uri
+)
+
+private fun editorDestinationSaver(): Saver<EditorDestination?, Any> {
+    return Saver(
+        save = { destination ->
+            destination?.let {
+                listOf(
+                    it.entryId.toString(),
+                    it.imageId.toString(),
+                    it.originalUri.toString()
+                )
+            }
+        },
+        restore = { saved ->
+            @Suppress("UNCHECKED_CAST")
+            val values = saved as? List<String> ?: return@Saver null
+            EditorDestination(
+                entryId = values[0].toLong(),
+                imageId = values[1].toLong(),
+                originalUri = Uri.parse(values[2])
+            )
+        }
+    )
+}
+
+private const val GALLERY_SCREEN_KEY = "gallery-screen"
+private const val EDITOR_SCREEN_KEY = "editor-screen"
 
 private fun requestedPermissionsForPicker(): Array<String> {
     return when {

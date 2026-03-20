@@ -14,35 +14,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.universe.imagepicker.presentation.component.TopBarWithCount
-import com.universe.imagepicker.presentation.picker.ImagePickerIntent
-import com.universe.imagepicker.presentation.picker.ImagePickerState
+import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.presentation.utils.photoGridDragHandler
 
 /// 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
 
 @Composable
 fun GalleryScreen(
-    state: ImagePickerState,
-    onIntent: (ImagePickerIntent) -> Unit,
+    state: GalleryScreenState,
+    onIntent: (GalleryScreenIntent) -> Unit,
+    onOpenEditor: (GalleryImage) -> Unit,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val gridState = rememberLazyGridState()
     val autoScrollSpeed = remember { mutableFloatStateOf(0f) }
-    var dropDownExpanded by remember { mutableStateOf(false) }
+    var dropDownExpanded by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
 
     LaunchedEffect(state.selectionLimitMessage) {
         state.selectionLimitMessage?.let {
             snackbarHostState.showSnackbar(it)
-            onIntent(ImagePickerIntent.DismissSelectionLimitMessage)
+            onIntent(GalleryScreenIntent.DismissSelectionLimitMessage)
         }
     }
 
@@ -53,20 +55,20 @@ fun GalleryScreen(
             TopBarWithCount(
                 selectedCount = state.selectedImages.size,
                 maxCount = state.maxSelectionCount,
-                onConfirm = { onIntent(ImagePickerIntent.ConfirmSelection) },
-                onCancel = { onIntent(ImagePickerIntent.Cancel) },
+                onConfirm = onConfirm,
+                onCancel = onCancel,
                 albums = state.albums,
                 dropDownExpanded = dropDownExpanded,
                 openDropDown = { dropDownExpanded = true },
                 closeDropDown = { dropDownExpanded = false },
                 selectedAlbum = state.selectedAlbum,
                 onAlbumSelected = { album ->
-                    onIntent(ImagePickerIntent.SelectAlbum(album))
+                    onIntent(GalleryScreenIntent.SelectAlbum(album))
                 },
             )
         }
     ) { innerPadding ->
-        if(state.isLoadingImages) {
+        if (state.isLoadingImages) {
             CircularProgressIndicator()
         } else {
             LazyVerticalGrid(
@@ -81,7 +83,7 @@ fun GalleryScreen(
                         selectedImages = state.selectedImages,
                         onSelect = { id ->
                             state.images.firstOrNull { it.id == id }?.let { image ->
-                                onIntent(ImagePickerIntent.ToggleImageSelection(image))
+                                onIntent(GalleryScreenIntent.ToggleImageSelection(image))
                             }
                         },
                         autoScrollSpeed = autoScrollSpeed,
@@ -90,20 +92,23 @@ fun GalleryScreen(
                     )
             ) {
                 items(state.images, key = { it.id }) { image ->
-                    val order = state.selectedImages.indexOfFirst { it.id == image.id }
+                    val selectedIndex = state.selectedImages.indexOfFirst { it.id == image.id }
+                    val order = selectedIndex
                         .takeIf { it >= 0 }?.let { it + 1 }
+                    val isSelected = selectedIndex >= 0
 
                     GalleryGridItem(
                         image = image,
                         selectionOrder = order,
-                        onTap = { onIntent(ImagePickerIntent.ToggleImageSelection(image)) },
-                        navigateToEditor = {
-                            onIntent(
-                                ImagePickerIntent.OpenEditor(
-                                    selectedImages = state.selectedImages,
-                                    selectImageId = image.id
-                                )
-                            )
+                        onSelectionBadgeTap = {
+                            onIntent(GalleryScreenIntent.ToggleImageSelection(image))
+                        },
+                        onImageTap = {
+                            if (isSelected) {
+                                onOpenEditor(image)
+                            } else {
+                                onIntent(GalleryScreenIntent.ToggleImageSelection(image))
+                            }
                         }
                     )
                 }

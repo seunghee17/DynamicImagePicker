@@ -29,8 +29,8 @@ import com.universe.imagepicker.presentation.component.SelectionBadge
 fun GalleryGridItem(
     image: GalleryImage,
     selectionOrder: Int?,       // null = 미선택, 1 이상 = 선택 순서
-    navigateToEditor: () -> Unit, // 편집 화면으로 이동
-    onTap: () -> Unit,
+    onImageTap: () -> Unit,
+    onSelectionBadgeTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isSelected = selectionOrder != null
@@ -44,11 +44,7 @@ fun GalleryGridItem(
             )
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap = {
-                        // 사진 선택과 편집 화면 이동 동시 동작
-                        onTap()
-                        navigateToEditor()
-                    },
+                    onTap = { onImageTap() },
                 )
             }
     ) {
@@ -71,7 +67,7 @@ fun GalleryGridItem(
                 .align(Alignment.TopEnd)
                 .padding(4.dp),
             order = selectionOrder,
-            onTap = onTap,
+            onTap = onSelectionBadgeTap,
         )
     }
 }
