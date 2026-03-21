@@ -1,4 +1,4 @@
-package com.universe.imagepicker.presentation.picker.viewmodel
+package com.universe.imagepicker.presentation.picker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

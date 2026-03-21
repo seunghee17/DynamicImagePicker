@@ -1,12 +1,8 @@
-package com.universe.imagepicker.presentation.picker.viewmodel
+package com.universe.imagepicker.presentation.picker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.universe.imagepicker.domain.model.PermissionStatus
-import com.universe.imagepicker.presentation.picker.ImagePickerEffect
-import com.universe.imagepicker.presentation.picker.ImagePickerIntent
-import com.universe.imagepicker.presentation.picker.ImagePickerState
-import com.universe.imagepicker.presentation.picker.PermissionCheckSource
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
