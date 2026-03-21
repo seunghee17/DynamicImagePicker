@@ -4,6 +4,17 @@ import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PermissionStatus
 import com.universe.imagepicker.domain.model.PickerResult
 
+enum class PermissionCheckSource {
+    INITIAL,
+    RESUME,
+    PERMISSION_RESULT,
+    RETRY_BUTTON
+}
+data class ImagePickerState(
+    val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
+    val hasRequestedPermission: Boolean = false
+)
+
 sealed class ImagePickerIntent {
     object Initialize : ImagePickerIntent()
     object OnHostResumed : ImagePickerIntent()
@@ -22,9 +33,12 @@ sealed class ImagePickerIntent {
     object Cancel : ImagePickerIntent()
 }
 
-enum class PermissionCheckSource {
-    INITIAL,
-    RESUME,
-    PERMISSION_RESULT,
-    RETRY_BUTTON
+sealed class ImagePickerEffect {
+    object NavigateToSettings : ImagePickerEffect()
+    object RequestPermission : ImagePickerEffect()
+    data class CheckPermission(val source: PermissionCheckSource) : ImagePickerEffect()
+    data class NavigateToEditor(val image: GalleryImage) : ImagePickerEffect()
+    data class ReturnResult(val result: PickerResult) : ImagePickerEffect()
+    object Cancelled : ImagePickerEffect()
+    data class ShowToast(val message: String) : ImagePickerEffect()
 }
