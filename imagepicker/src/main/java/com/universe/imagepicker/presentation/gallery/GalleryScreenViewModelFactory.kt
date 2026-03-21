@@ -6,7 +6,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.data.repository.GalleryRepositoryImpl
+import com.universe.imagepicker.data.repository.ImageEditRepositoryImpl
+import com.universe.imagepicker.data.source.ImageFileDataSource
 import com.universe.imagepicker.data.source.MediaStoreDataSource
+import com.universe.imagepicker.domain.usecase.ClearEditCacheUseCase
 import com.universe.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
 import com.universe.imagepicker.domain.usecase.GetImagesInAlbumUseCase
 
@@ -18,11 +21,12 @@ internal class GalleryScreenViewModelFactory(
         modelClass: Class<T>,
         extras: CreationExtras
     ): T {
-        val dataSource = MediaStoreDataSource(context.contentResolver)
-        val repository = GalleryRepositoryImpl(dataSource)
+        val galleryRepository = GalleryRepositoryImpl(MediaStoreDataSource(context.contentResolver))
+        val imageEditRepository = ImageEditRepositoryImpl(ImageFileDataSource(context))
         return GalleryScreenViewModel(
-            getAlbums = GetGalleryAlbumsUseCase(repository),
-            getImagesInAlbum = GetImagesInAlbumUseCase(repository),
+            getAlbums = GetGalleryAlbumsUseCase(galleryRepository),
+            getImagesInAlbum = GetImagesInAlbumUseCase(galleryRepository),
+            clearEditCache = ClearEditCacheUseCase(imageEditRepository),
             maxSelectionCount = config.maxSelectionCount
         ) as T
     }

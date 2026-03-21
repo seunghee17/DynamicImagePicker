@@ -33,7 +33,7 @@ interface ImagePickerContract {
         object NavigateToSettings : Effect()
         object RequestPermission : Effect()
         data class CheckPermission(val source: PermissionCheckSource) : Effect()
-        data class NavigateToEditor(val image: GalleryImage) : Effect()
+        data class NavigateToEditor(val image: GalleryImage, val entryId: Long) : Effect()
         data class ReturnResult(val result: PickerResult) : Effect()
         object Cancelled : Effect()
         data class ShowToast(val message: String) : Effect()

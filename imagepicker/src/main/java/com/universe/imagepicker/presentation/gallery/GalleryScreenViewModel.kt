@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PickedImage
 import com.universe.imagepicker.domain.model.PickerResult
+import com.universe.imagepicker.domain.usecase.ClearEditCacheUseCase
 import com.universe.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
 import com.universe.imagepicker.domain.usecase.GetImagesInAlbumUseCase
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 class GalleryScreenViewModel(
     private val getAlbums: GetGalleryAlbumsUseCase,
     private val getImagesInAlbum: GetImagesInAlbumUseCase,
+    private val clearEditCache: ClearEditCacheUseCase,
     maxSelectionCount: Int
 ) : ViewModel() {
 
@@ -31,9 +33,18 @@ class GalleryScreenViewModel(
 
     private var albumsObserved = false
 
+    // confirmSelection() 후 다음 세션 시작 시 캐시를 정리하기 위한 플래그
+    private var pendingCacheClean = false
+
     fun handleIntent(intent: GalleryContract.Intent) {
         when (intent) {
-            GalleryContract.Intent.Initialize -> observeAlbums()
+            GalleryContract.Intent.Initialize -> {
+                if (pendingCacheClean) {
+                    pendingCacheClean = false
+                    viewModelScope.launch { runCatching { clearEditCache() } }
+                }
+                observeAlbums()
+            }
             is GalleryContract.Intent.SelectAlbum -> {
                 _state.update { it.copy(selectedAlbum = intent.album) }
                 loadImages(intent.album.id)
@@ -110,6 +121,8 @@ class GalleryScreenViewModel(
     private fun confirmSelection() {
         val result = buildPickerResult()
         resetSelection()
+        // 호스트 앱이 editedUri 파일을 사용할 수 있도록 다음 세션 시작 시 정리
+        pendingCacheClean = true
         viewModelScope.launch {
             _effect.send(GalleryContract.Effect.SelectionConfirmed(result))
         }
@@ -117,8 +130,10 @@ class GalleryScreenViewModel(
 
     private fun cancel() {
         resetSelection()
+        // 결과를 반환하지 않으므로 캐시 파일 즉시 삭제
         viewModelScope.launch {
             _effect.send(GalleryContract.Effect.Cancelled)
+            runCatching { clearEditCache() }
         }
     }
 
