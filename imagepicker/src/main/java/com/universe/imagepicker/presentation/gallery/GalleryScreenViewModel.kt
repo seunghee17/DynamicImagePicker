@@ -34,6 +34,7 @@ class GalleryScreenViewModel(
             }
             is GalleryScreenIntent.ToggleImageSelection -> toggleSelection(intent.image)
             is GalleryScreenIntent.OnEditResult -> applyEditResult(intent.pickedImage)
+            GalleryScreenIntent.ResetSelection -> resetSelection()
             GalleryScreenIntent.DismissSelectionLimitMessage -> {
                 _state.update { it.copy(selectionLimitMessage = null) }
             }
@@ -105,6 +106,16 @@ class GalleryScreenViewModel(
                 ?.id
                 ?: return@update current
             current.copy(editResults = current.editResults + (targetId to pickedImage))
+        }
+    }
+
+    private fun resetSelection() {
+        _state.update {
+            it.copy(
+                selectedImages = emptyList(),
+                selectionLimitMessage = null,
+                editResults = emptyMap()
+            )
         }
     }
 }

@@ -9,5 +9,6 @@ sealed class GalleryScreenIntent {
     data class SelectAlbum(val album: GalleryAlbum) : GalleryScreenIntent()
     data class ToggleImageSelection(val image: GalleryImage) : GalleryScreenIntent()
     data class OnEditResult(val pickedImage: PickedImage) : GalleryScreenIntent()
+    object ResetSelection : GalleryScreenIntent()
     object DismissSelectionLimitMessage : GalleryScreenIntent()
 }
