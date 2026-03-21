@@ -22,8 +22,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.domain.model.PermissionStatus
 import com.universe.imagepicker.domain.model.PickerResult
+import com.universe.imagepicker.presentation.gallery.GalleryContract
 import com.universe.imagepicker.presentation.gallery.GalleryScreen
-import com.universe.imagepicker.presentation.gallery.GalleryScreenIntent
 import com.universe.imagepicker.presentation.gallery.GalleryScreenViewModel
 import com.universe.imagepicker.presentation.gallery.GalleryScreenViewModelFactory
 import kotlinx.coroutines.flow.collectLatest
@@ -89,7 +89,7 @@ fun ImagePickerScreen(
     // 권한 허용 시 갤러리 초기화
     LaunchedEffect(state.permissionStatus) {
         if (state.permissionStatus == PermissionStatus.GRANTED) {
-            galleryViewModel.handleIntent(GalleryScreenIntent.Initialize)
+            galleryViewModel.handleIntent(GalleryContract.Intent.Initialize)
         }
     }
 
@@ -156,7 +156,7 @@ fun ImagePickerScreen(
                 EditorRoute(
                     destination = editorDestination!!,
                     onEditApplied = { pickedImage ->
-                        galleryViewModel.handleIntent(GalleryScreenIntent.OnEditResult(pickedImage))
+                        galleryViewModel.handleIntent(GalleryContract.Intent.OnEditResult(pickedImage))
                         editorDestination = null
                     },
                     onDismiss = { editorDestination = null },

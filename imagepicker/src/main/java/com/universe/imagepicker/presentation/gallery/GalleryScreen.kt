@@ -31,9 +31,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun GalleryScreen(
-    state: GalleryScreenState,
-    effect: Flow<GalleryScreenEffect>,
-    onIntent: (GalleryScreenIntent) -> Unit,
+    state: GalleryContract.State,
+    effect: Flow<GalleryContract.Effect>,
+    onIntent: (GalleryContract.Intent) -> Unit,
     onOpenEditor: (GalleryImage) -> Unit,
     onConfirm: (PickerResult) -> Unit,
     onCancel: () -> Unit,
@@ -47,10 +47,10 @@ fun GalleryScreen(
     LaunchedEffect(effect) {
         effect.collect { galleryEffect ->
             when (galleryEffect) {
-                is GalleryScreenEffect.ShowSelectionLimitSnackbar ->
+                is GalleryContract.Effect.ShowSelectionLimitSnackbar ->
                     snackbarHostState.showSnackbar(galleryEffect.message)
-                is GalleryScreenEffect.SelectionConfirmed -> onConfirm(galleryEffect.result)
-                GalleryScreenEffect.Cancelled -> onCancel()
+                is GalleryContract.Effect.SelectionConfirmed -> onConfirm(galleryEffect.result)
+                GalleryContract.Effect.Cancelled -> onCancel()
             }
         }
     }
@@ -62,15 +62,15 @@ fun GalleryScreen(
             TopBarWithCount(
                 selectedCount = state.selectedImages.size,
                 maxCount = state.maxSelectionCount,
-                onConfirm = { onIntent(GalleryScreenIntent.Confirm) },
-                onCancel = { onIntent(GalleryScreenIntent.Cancel) },
+                onConfirm = { onIntent(GalleryContract.Intent.Confirm) },
+                onCancel = { onIntent(GalleryContract.Intent.Cancel) },
                 albums = state.albums,
                 dropDownExpanded = dropDownExpanded,
                 openDropDown = { dropDownExpanded = true },
                 closeDropDown = { dropDownExpanded = false },
                 selectedAlbum = state.selectedAlbum,
                 onAlbumSelected = { album ->
-                    onIntent(GalleryScreenIntent.SelectAlbum(album))
+                    onIntent(GalleryContract.Intent.SelectAlbum(album))
                 },
             )
         }
@@ -90,7 +90,7 @@ fun GalleryScreen(
                         selectedImages = state.selectedImages,
                         onSelect = { id ->
                             state.images.firstOrNull { it.id == id }?.let { image ->
-                                onIntent(GalleryScreenIntent.ToggleImageSelection(image))
+                                onIntent(GalleryContract.Intent.ToggleImageSelection(image))
                             }
                         },
                         autoScrollSpeed = autoScrollSpeed,
@@ -106,7 +106,7 @@ fun GalleryScreen(
                         image = image,
                         selectionOrder = order,
                         onSelectionBadgeTap = {
-                            onIntent(GalleryScreenIntent.ToggleImageSelection(image))
+                            onIntent(GalleryContract.Intent.ToggleImageSelection(image))
                         },
                         onOpenEditor = { onOpenEditor(image) }
                     )

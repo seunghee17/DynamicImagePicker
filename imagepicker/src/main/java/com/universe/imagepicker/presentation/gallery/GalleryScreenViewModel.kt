@@ -23,25 +23,25 @@ class GalleryScreenViewModel(
     maxSelectionCount: Int
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(GalleryScreenState(maxSelectionCount = maxSelectionCount))
-    val state: StateFlow<GalleryScreenState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(GalleryContract.State(maxSelectionCount = maxSelectionCount))
+    val state: StateFlow<GalleryContract.State> = _state.asStateFlow()
 
-    private val _effect = Channel<GalleryScreenEffect>(Channel.BUFFERED)
+    private val _effect = Channel<GalleryContract.Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
     private var albumsObserved = false
 
-    fun handleIntent(intent: GalleryScreenIntent) {
+    fun handleIntent(intent: GalleryContract.Intent) {
         when (intent) {
-            GalleryScreenIntent.Initialize -> observeAlbums()
-            is GalleryScreenIntent.SelectAlbum -> {
+            GalleryContract.Intent.Initialize -> observeAlbums()
+            is GalleryContract.Intent.SelectAlbum -> {
                 _state.update { it.copy(selectedAlbum = intent.album) }
                 loadImages(intent.album.id)
             }
-            is GalleryScreenIntent.ToggleImageSelection -> toggleSelection(intent.image)
-            is GalleryScreenIntent.OnEditResult -> applyEditResult(intent.pickedImage)
-            GalleryScreenIntent.Confirm -> confirmSelection()
-            GalleryScreenIntent.Cancel -> cancel()
+            is GalleryContract.Intent.ToggleImageSelection -> toggleSelection(intent.image)
+            is GalleryContract.Intent.OnEditResult -> applyEditResult(intent.pickedImage)
+            GalleryContract.Intent.Confirm -> confirmSelection()
+            GalleryContract.Intent.Cancel -> cancel()
         }
     }
 
@@ -85,7 +85,7 @@ class GalleryScreenViewModel(
         if (current.isSelectionLimitReached) {
             viewModelScope.launch {
                 _effect.send(
-                    GalleryScreenEffect.ShowSelectionLimitSnackbar(
+                    GalleryContract.Effect.ShowSelectionLimitSnackbar(
                         "이미지는 최대 ${current.maxSelectionCount}장까지 선택할 수 있습니다."
                     )
                 )
@@ -111,14 +111,14 @@ class GalleryScreenViewModel(
         val result = buildPickerResult()
         resetSelection()
         viewModelScope.launch {
-            _effect.send(GalleryScreenEffect.SelectionConfirmed(result))
+            _effect.send(GalleryContract.Effect.SelectionConfirmed(result))
         }
     }
 
     private fun cancel() {
         resetSelection()
         viewModelScope.launch {
-            _effect.send(GalleryScreenEffect.Cancelled)
+            _effect.send(GalleryContract.Effect.Cancelled)
         }
     }
 
