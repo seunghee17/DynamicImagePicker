@@ -3,6 +3,7 @@ package com.universe.imagepicker.presentation.gallery
 import com.universe.imagepicker.domain.model.GalleryAlbum
 import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PickedImage
+import com.universe.imagepicker.domain.model.PickerResult
 
 data class GalleryScreenState(
     val albums: List<GalleryAlbum> = emptyList(),
@@ -16,4 +17,19 @@ data class GalleryScreenState(
 ) {
     val isSelectionLimitReached: Boolean
         get() = selectedImages.size >= maxSelectionCount
+}
+
+sealed class GalleryScreenIntent {
+    object Initialize : GalleryScreenIntent()
+    data class SelectAlbum(val album: GalleryAlbum) : GalleryScreenIntent()
+    data class ToggleImageSelection(val image: GalleryImage) : GalleryScreenIntent()
+    data class OnEditResult(val pickedImage: PickedImage) : GalleryScreenIntent()
+    object Confirm : GalleryScreenIntent()
+    object Cancel : GalleryScreenIntent()
+}
+
+sealed class GalleryScreenEffect {
+    data class ShowSelectionLimitSnackbar(val message: String) : GalleryScreenEffect()
+    data class SelectionConfirmed(val result: PickerResult) : GalleryScreenEffect()
+    object Cancelled : GalleryScreenEffect()
 }
