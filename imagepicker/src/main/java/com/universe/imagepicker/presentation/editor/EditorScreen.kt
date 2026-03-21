@@ -30,8 +30,8 @@ import coil.compose.AsyncImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditorScreen(
-    state: EditorState,
-    onIntent: (EditorIntent) -> Unit,
+    state: EditorContract.State,
+    onIntent: (EditorContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -40,13 +40,13 @@ fun EditorScreen(
             TopAppBar(
                 title = { Text("편집") },
                 navigationIcon = {
-                    TextButton(onClick = { onIntent(EditorIntent.Cancel) }) {
+                    TextButton(onClick = { onIntent(EditorContract.Intent.Cancel) }) {
                         Text("취소")
                     }
                 },
                 actions = {
                     TextButton(
-                        onClick = { onIntent(EditorIntent.SaveAndReturn) },
+                        onClick = { onIntent(EditorContract.Intent.SaveAndReturn) },
                         enabled = !state.isSaving
                     ) {
                         Text("완료")
@@ -86,11 +86,11 @@ fun EditorScreen(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                OutlinedButton(onClick = { onIntent(EditorIntent.RotateClockwise) }) {
+                OutlinedButton(onClick = { onIntent(EditorContract.Intent.RotateClockwise) }) {
                     Text("회전")
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                OutlinedButton(onClick = { onIntent(EditorIntent.EnterCropMode) }) {
+                OutlinedButton(onClick = { onIntent(EditorContract.Intent.EnterCropMode) }) {
                     Text("크롭")
                 }
             }

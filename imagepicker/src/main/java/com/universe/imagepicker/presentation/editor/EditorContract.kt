@@ -4,37 +4,40 @@ import android.net.Uri
 import com.universe.imagepicker.domain.model.CropRect
 import com.universe.imagepicker.domain.model.PickedImage
 
-enum class EditorMode { NORMAL, CROPPING }
+interface EditorContract {
 
-data class EditorState(
-    val originalUri: Uri,
-    val previewUri: Uri,                        // 편집 전은 originalUri와 동일
-    val rotationDegrees: Int = 0,
-    val cropRect: CropRect = CropRect.FULL,
-    val mode: EditorMode = EditorMode.NORMAL,
-    val isSaving: Boolean = false,
-    val saveError: String? = null,
-    val hasUnsavedChanges: Boolean = false
-)
+    enum class Mode { NORMAL, CROPPING }
 
-sealed class EditorIntent {
-    /** 시계 방향 90도 회전 */
-    object RotateClockwise : EditorIntent()
+    data class State(
+        val originalUri: Uri,
+        val previewUri: Uri,                        // 편집 전은 originalUri와 동일
+        val rotationDegrees: Int = 0,
+        val cropRect: CropRect = CropRect.FULL,
+        val mode: Mode = Mode.NORMAL,
+        val isSaving: Boolean = false,
+        val saveError: String? = null,
+        val hasUnsavedChanges: Boolean = false
+    )
 
-    object EnterCropMode : EditorIntent()
-    data class UpdateCropRect(val rect: CropRect) : EditorIntent()
-    object ApplyCrop : EditorIntent()
-    object ExitCropMode : EditorIntent()
+    sealed class Intent {
+        /** 시계 방향 90도 회전 */
+        object RotateClockwise : Intent()
 
-    object SaveAndReturn : EditorIntent()
-    object Cancel : EditorIntent()
+        object EnterCropMode : Intent()
+        data class UpdateCropRect(val rect: CropRect) : Intent()
+        object ApplyCrop : Intent()
+        object ExitCropMode : Intent()
 
-    object DismissSaveError : EditorIntent()
-    object RetrySave : EditorIntent()
-}
+        object SaveAndReturn : Intent()
+        object Cancel : Intent()
 
-sealed class EditorEffect {
-    data class ReturnEditedImage(val pickedImage: PickedImage) : EditorEffect()
-    object Cancelled : EditorEffect()
-    data class ShowError(val message: String) : EditorEffect()
+        object DismissSaveError : Intent()
+        object RetrySave : Intent()
+    }
+
+    sealed class Effect {
+        data class ReturnEditedImage(val pickedImage: PickedImage) : Effect()
+        object Cancelled : Effect()
+        data class ShowError(val message: String) : Effect()
+    }
 }

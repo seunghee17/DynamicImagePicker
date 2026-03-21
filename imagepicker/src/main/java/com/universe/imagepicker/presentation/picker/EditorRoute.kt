@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.universe.imagepicker.domain.model.PickedImage
-import com.universe.imagepicker.presentation.editor.EditorEffect
+import com.universe.imagepicker.presentation.editor.EditorContract
 import com.universe.imagepicker.presentation.editor.EditorScreen
 import com.universe.imagepicker.presentation.editor.EditorViewModel
 import com.universe.imagepicker.presentation.editor.EditorViewModelFactory
@@ -65,9 +65,9 @@ internal fun EditorRoute(
     LaunchedEffect(viewModel) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is EditorEffect.ReturnEditedImage -> onEditApplied(effect.pickedImage)
-                is EditorEffect.Cancelled -> onDismiss()
-                is EditorEffect.ShowError ->
+                is EditorContract.Effect.ReturnEditedImage -> onEditApplied(effect.pickedImage)
+                EditorContract.Effect.Cancelled -> onDismiss()
+                is EditorContract.Effect.ShowError ->
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
             }
         }

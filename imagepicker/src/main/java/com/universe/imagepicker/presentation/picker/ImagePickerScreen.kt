@@ -60,26 +60,26 @@ fun ImagePickerScreen(
     ) {
         hasRequestedPermission = true
         viewModel.handleIntent(
-            ImagePickerIntent.OnPermissionEvaluated(
+            ImagePickerContract.Intent.OnPermissionEvaluated(
                 status = resolvePermissionStatus(
                     context = context,
                     hasRequestedPermission = hasRequestedPermission
                 ),
-                source = PermissionCheckSource.PERMISSION_RESULT
+                source = ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT
             )
         )
     }
 
     // 최초 진입 시 권한 체크
     LaunchedEffect(Unit) {
-        viewModel.handleIntent(ImagePickerIntent.Initialize)
+        viewModel.handleIntent(ImagePickerContract.Intent.Initialize)
     }
 
     // 화면 복귀 시 권한 재확인 (설정에서 돌아온 경우 대응)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.handleIntent(ImagePickerIntent.OnHostResumed)
+                viewModel.handleIntent(ImagePickerContract.Intent.OnHostResumed)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -97,9 +97,9 @@ fun ImagePickerScreen(
     LaunchedEffect(viewModel, context, hasRequestedPermission) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
-                is ImagePickerEffect.CheckPermission -> {
+                is ImagePickerContract.Effect.CheckPermission -> {
                     viewModel.handleIntent(
-                        ImagePickerIntent.OnPermissionEvaluated(
+                        ImagePickerContract.Intent.OnPermissionEvaluated(
                             status = resolvePermissionStatus(
                                 context = context,
                                 hasRequestedPermission = hasRequestedPermission
@@ -108,16 +108,16 @@ fun ImagePickerScreen(
                         )
                     )
                 }
-                is ImagePickerEffect.RequestPermission -> {
+                is ImagePickerContract.Effect.RequestPermission -> {
                     hasRequestedPermission = true
                     permissionLauncher.launch(requestedPermissionsForPicker())
                 }
-                is ImagePickerEffect.NavigateToSettings -> openAppSettings(context)
-                is ImagePickerEffect.ReturnResult -> onResult(effect.result)
-                is ImagePickerEffect.Cancelled -> onCancel()
-                is ImagePickerEffect.ShowToast ->
+                is ImagePickerContract.Effect.NavigateToSettings -> openAppSettings(context)
+                is ImagePickerContract.Effect.ReturnResult -> onResult(effect.result)
+                is ImagePickerContract.Effect.Cancelled -> onCancel()
+                is ImagePickerContract.Effect.ShowToast ->
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
-                is ImagePickerEffect.NavigateToEditor -> {
+                is ImagePickerContract.Effect.NavigateToEditor -> {
                     editorDestination = EditorDestination(
                         entryId = nextEditorEntryId,
                         imageId = effect.image.id,
@@ -139,13 +139,13 @@ fun ImagePickerScreen(
                     effect = galleryViewModel.effect,
                     onIntent = galleryViewModel::handleIntent,
                     onOpenEditor = { image ->
-                        viewModel.handleIntent(ImagePickerIntent.OpenEditor(image = image))
+                        viewModel.handleIntent(ImagePickerContract.Intent.OpenEditor(image = image))
                     },
                     onConfirm = { result ->
-                        viewModel.handleIntent(ImagePickerIntent.ConfirmSelection(result))
+                        viewModel.handleIntent(ImagePickerContract.Intent.ConfirmSelection(result))
                     },
                     onCancel = {
-                        viewModel.handleIntent(ImagePickerIntent.Cancel)
+                        viewModel.handleIntent(ImagePickerContract.Intent.Cancel)
                     }
                 )
             }

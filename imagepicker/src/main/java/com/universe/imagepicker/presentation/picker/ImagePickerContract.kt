@@ -4,41 +4,45 @@ import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PermissionStatus
 import com.universe.imagepicker.domain.model.PickerResult
 
-enum class PermissionCheckSource {
-    INITIAL,
-    RESUME,
-    PERMISSION_RESULT,
-    RETRY_BUTTON
-}
-data class ImagePickerState(
-    val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
-    val hasRequestedPermission: Boolean = false
-)
+interface ImagePickerContract {
 
-sealed class ImagePickerIntent {
-    object Initialize : ImagePickerIntent()
-    object OnHostResumed : ImagePickerIntent()
-    object RequestPermissionClick : ImagePickerIntent()
-    object OpenSettingsClick : ImagePickerIntent()
-    data class OnPermissionEvaluated(
-        val status: PermissionStatus,
-        val source: PermissionCheckSource
-    ) : ImagePickerIntent()
+    data class State(
+        val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
+        val hasRequestedPermission: Boolean = false
+    )
 
-    // 화면 이동
-    data class OpenEditor(val image: GalleryImage) : ImagePickerIntent()
+    sealed class Intent {
+        object Initialize : Intent()
+        object OnHostResumed : Intent()
+        object RequestPermissionClick : Intent()
+        object OpenSettingsClick : Intent()
+        data class OnPermissionEvaluated(
+            val status: PermissionStatus,
+            val source: PermissionCheckSource
+        ) : Intent()
 
-    // 완료/취소
-    data class ConfirmSelection(val result: PickerResult) : ImagePickerIntent()
-    object Cancel : ImagePickerIntent()
-}
+        // 화면 이동
+        data class OpenEditor(val image: GalleryImage) : Intent()
 
-sealed class ImagePickerEffect {
-    object NavigateToSettings : ImagePickerEffect()
-    object RequestPermission : ImagePickerEffect()
-    data class CheckPermission(val source: PermissionCheckSource) : ImagePickerEffect()
-    data class NavigateToEditor(val image: GalleryImage) : ImagePickerEffect()
-    data class ReturnResult(val result: PickerResult) : ImagePickerEffect()
-    object Cancelled : ImagePickerEffect()
-    data class ShowToast(val message: String) : ImagePickerEffect()
+        // 완료/취소
+        data class ConfirmSelection(val result: PickerResult) : Intent()
+        object Cancel : Intent()
+    }
+
+    sealed class Effect {
+        object NavigateToSettings : Effect()
+        object RequestPermission : Effect()
+        data class CheckPermission(val source: PermissionCheckSource) : Effect()
+        data class NavigateToEditor(val image: GalleryImage) : Effect()
+        data class ReturnResult(val result: PickerResult) : Effect()
+        object Cancelled : Effect()
+        data class ShowToast(val message: String) : Effect()
+    }
+
+    enum class PermissionCheckSource {
+        INITIAL,
+        RESUME,
+        PERMISSION_RESULT,
+        RETRY_BUTTON
+    }
 }

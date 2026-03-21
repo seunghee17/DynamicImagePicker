@@ -22,24 +22,27 @@ class EditorViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        EditorState(originalUri = originalUri, previewUri = originalUri)
+        EditorContract.State(originalUri = originalUri, previewUri = originalUri)
     )
-    val state: StateFlow<EditorState> = _state.asStateFlow()
+    val state: StateFlow<EditorContract.State> = _state.asStateFlow()
 
-    private val _effect = Channel<EditorEffect>(Channel.BUFFERED)
+    private val _effect = Channel<EditorContract.Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
-    fun handleIntent(intent: EditorIntent) {
+    fun handleIntent(intent: EditorContract.Intent) {
         when (intent) {
-            is EditorIntent.RotateClockwise -> rotate()
-            is EditorIntent.EnterCropMode -> _state.update { it.copy(mode = EditorMode.CROPPING) }
-            is EditorIntent.UpdateCropRect -> _state.update { it.copy(cropRect = intent.rect) }
-            is EditorIntent.ApplyCrop -> applyCrop()
-            is EditorIntent.ExitCropMode -> _state.update { it.copy(mode = EditorMode.NORMAL, cropRect = CropRect.FULL) }
-            is EditorIntent.SaveAndReturn -> save()
-            is EditorIntent.Cancel -> sendEffect(EditorEffect.Cancelled)
-            is EditorIntent.DismissSaveError -> _state.update { it.copy(saveError = null) }
-            is EditorIntent.RetrySave -> save()
+            EditorContract.Intent.RotateClockwise -> rotate()
+            EditorContract.Intent.EnterCropMode ->
+                _state.update { it.copy(mode = EditorContract.Mode.CROPPING) }
+            is EditorContract.Intent.UpdateCropRect ->
+                _state.update { it.copy(cropRect = intent.rect) }
+            EditorContract.Intent.ApplyCrop -> applyCrop()
+            EditorContract.Intent.ExitCropMode ->
+                _state.update { it.copy(mode = EditorContract.Mode.NORMAL, cropRect = CropRect.FULL) }
+            EditorContract.Intent.SaveAndReturn -> save()
+            EditorContract.Intent.Cancel -> sendEffect(EditorContract.Effect.Cancelled)
+            EditorContract.Intent.DismissSaveError -> _state.update { it.copy(saveError = null) }
+            EditorContract.Intent.RetrySave -> save()
         }
     }
 
@@ -52,7 +55,7 @@ class EditorViewModel(
             }.onSuccess { (uri, degrees) ->
                 _state.update { it.copy(previewUri = uri, rotationDegrees = degrees, hasUnsavedChanges = true) }
             }.onFailure { e ->
-                sendEffect(EditorEffect.ShowError(e.message ?: "회전 처리에 실패했습니다."))
+                sendEffect(EditorContract.Effect.ShowError(e.message ?: "회전 처리에 실패했습니다."))
             }
         }
     }
@@ -63,9 +66,9 @@ class EditorViewModel(
             runCatching {
                 cropImage(current.previewUri, current.cropRect)
             }.onSuccess { uri ->
-                _state.update { it.copy(previewUri = uri, mode = EditorMode.NORMAL, hasUnsavedChanges = true) }
+                _state.update { it.copy(previewUri = uri, mode = EditorContract.Mode.NORMAL, hasUnsavedChanges = true) }
             }.onFailure { e ->
-                sendEffect(EditorEffect.ShowError(e.message ?: "크롭 처리에 실패했습니다."))
+                sendEffect(EditorContract.Effect.ShowError(e.message ?: "크롭 처리에 실패했습니다."))
             }
         }
     }
@@ -80,10 +83,10 @@ class EditorViewModel(
             cropRect = if (current.cropRect != CropRect.FULL) current.cropRect else null
         )
         _state.update { it.copy(isSaving = false) }
-        sendEffect(EditorEffect.ReturnEditedImage(pickedImage))
+        sendEffect(EditorContract.Effect.ReturnEditedImage(pickedImage))
     }
 
-    private fun sendEffect(effect: EditorEffect) {
+    private fun sendEffect(effect: EditorContract.Effect) {
         viewModelScope.launch { _effect.send(effect) }
     }
 

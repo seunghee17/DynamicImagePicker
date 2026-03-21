@@ -16,8 +16,8 @@ import com.universe.imagepicker.domain.model.PermissionStatus
 @Composable
 internal fun PermissionFallbackContent(
     modifier: Modifier = Modifier,
-    state: ImagePickerState,
-    onIntent: (ImagePickerIntent) -> Unit,
+    state: ImagePickerContract.State,
+    onIntent: (ImagePickerContract.Intent) -> Unit,
 ) {
     val message = when (state.permissionStatus) {
         PermissionStatus.PARTIALLY_GRANTED ->
@@ -51,9 +51,9 @@ internal fun PermissionFallbackContent(
         Button(
             onClick = {
                 if (state.permissionStatus == PermissionStatus.PERMANENTLY_DENIED) {
-                    onIntent(ImagePickerIntent.OpenSettingsClick)
+                    onIntent(ImagePickerContract.Intent.OpenSettingsClick)
                 } else {
-                    onIntent(ImagePickerIntent.RequestPermissionClick)
+                    onIntent(ImagePickerContract.Intent.RequestPermissionClick)
                 }
             },
             modifier = Modifier.padding(top = 16.dp)

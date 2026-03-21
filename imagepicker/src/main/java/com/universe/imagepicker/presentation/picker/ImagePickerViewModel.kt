@@ -13,70 +13,75 @@ import kotlinx.coroutines.launch
 
 class ImagePickerViewModel : ViewModel() {
 
-    private val _state = MutableStateFlow(ImagePickerState())
-    val state: StateFlow<ImagePickerState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(ImagePickerContract.State())
+    val state: StateFlow<ImagePickerContract.State> = _state.asStateFlow()
 
     /** 각 Effect는 Channel을 통해 정확히 1회만 소비된다. */
-    private val _effect = Channel<ImagePickerEffect>(Channel.BUFFERED)
+    private val _effect = Channel<ImagePickerContract.Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
-    fun handleIntent(intent: ImagePickerIntent) {
+    fun handleIntent(intent: ImagePickerContract.Intent) {
         when (intent) {
-            ImagePickerIntent.Initialize -> sendEffect(
-                ImagePickerEffect.CheckPermission(PermissionCheckSource.INITIAL)
+            ImagePickerContract.Intent.Initialize -> sendEffect(
+                ImagePickerContract.Effect.CheckPermission(ImagePickerContract.PermissionCheckSource.INITIAL)
             )
-            ImagePickerIntent.OnHostResumed -> sendEffect(
-                ImagePickerEffect.CheckPermission(PermissionCheckSource.RESUME)
+            ImagePickerContract.Intent.OnHostResumed -> sendEffect(
+                ImagePickerContract.Effect.CheckPermission(ImagePickerContract.PermissionCheckSource.RESUME)
             )
-            ImagePickerIntent.RequestPermissionClick -> sendEffect(ImagePickerEffect.RequestPermission)
-            ImagePickerIntent.OpenSettingsClick -> sendEffect(ImagePickerEffect.NavigateToSettings)
-            is ImagePickerIntent.OnPermissionEvaluated -> handlePermissionEvaluated(
+            ImagePickerContract.Intent.RequestPermissionClick ->
+                sendEffect(ImagePickerContract.Effect.RequestPermission)
+            ImagePickerContract.Intent.OpenSettingsClick ->
+                sendEffect(ImagePickerContract.Effect.NavigateToSettings)
+            is ImagePickerContract.Intent.OnPermissionEvaluated -> handlePermissionEvaluated(
                 status = intent.status,
                 source = intent.source
             )
-            is ImagePickerIntent.OpenEditor -> sendEffect(ImagePickerEffect.NavigateToEditor(intent.image))
-            is ImagePickerIntent.ConfirmSelection -> {
-                sendEffect(ImagePickerEffect.ReturnResult(intent.result))
-            }
-            is ImagePickerIntent.Cancel -> sendEffect(ImagePickerEffect.Cancelled)
+            is ImagePickerContract.Intent.OpenEditor ->
+                sendEffect(ImagePickerContract.Effect.NavigateToEditor(intent.image))
+            is ImagePickerContract.Intent.ConfirmSelection ->
+                sendEffect(ImagePickerContract.Effect.ReturnResult(intent.result))
+            ImagePickerContract.Intent.Cancel ->
+                sendEffect(ImagePickerContract.Effect.Cancelled)
         }
     }
 
     private fun handlePermissionEvaluated(
         status: PermissionStatus,
-        source: PermissionCheckSource
+        source: ImagePickerContract.PermissionCheckSource
     ) {
         _state.update { current ->
             current.copy(
                 permissionStatus = status,
-                hasRequestedPermission = current.hasRequestedPermission || source == PermissionCheckSource.PERMISSION_RESULT
+                hasRequestedPermission = current.hasRequestedPermission ||
+                        source == ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT
             )
         }
 
         when (status) {
             PermissionStatus.GRANTED -> Unit
             PermissionStatus.PARTIALLY_GRANTED -> {
-                if (source != PermissionCheckSource.RESUME) {
-                    sendEffect(ImagePickerEffect.RequestPermission)
+                if (source != ImagePickerContract.PermissionCheckSource.RESUME) {
+                    sendEffect(ImagePickerContract.Effect.RequestPermission)
                 }
             }
             PermissionStatus.DENIED -> {
-                if (source == PermissionCheckSource.INITIAL || source == PermissionCheckSource.RETRY_BUTTON) {
-                    sendEffect(ImagePickerEffect.RequestPermission)
+                if (source == ImagePickerContract.PermissionCheckSource.INITIAL ||
+                    source == ImagePickerContract.PermissionCheckSource.RETRY_BUTTON
+                ) {
+                    sendEffect(ImagePickerContract.Effect.RequestPermission)
                 }
             }
             PermissionStatus.PERMANENTLY_DENIED -> {
-                if (
-                    source == PermissionCheckSource.PERMISSION_RESULT ||
-                    source == PermissionCheckSource.RETRY_BUTTON
+                if (source == ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT ||
+                    source == ImagePickerContract.PermissionCheckSource.RETRY_BUTTON
                 ) {
-                    sendEffect(ImagePickerEffect.NavigateToSettings)
+                    sendEffect(ImagePickerContract.Effect.NavigateToSettings)
                 }
             }
         }
     }
 
-    private fun sendEffect(effect: ImagePickerEffect) {
+    private fun sendEffect(effect: ImagePickerContract.Effect) {
         viewModelScope.launch { _effect.send(effect) }
     }
 
