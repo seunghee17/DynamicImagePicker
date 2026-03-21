@@ -29,7 +29,7 @@ import com.universe.imagepicker.presentation.component.SelectionBadge
 fun GalleryGridItem(
     image: GalleryImage,
     selectionOrder: Int?,       // null = 미선택, 1 이상 = 선택 순서
-    onImageTap: () -> Unit,
+    onOpenEditor: () -> Unit,
     onSelectionBadgeTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -44,7 +44,7 @@ fun GalleryGridItem(
             )
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap = { onImageTap() },
+                    onTap = { onOpenEditor() },
                 )
             }
     ) {

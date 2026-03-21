@@ -153,7 +153,7 @@ fun ImagePickerScreen(
                     state = galleryState,
                     onIntent = galleryViewModel::handleIntent,
                     onOpenEditor = { image ->
-                        viewModel.handleIntent(ImagePickerIntent.OpenEditor(image))
+                        viewModel.handleIntent(ImagePickerIntent.OpenEditor(image = image))
                     },
                     onConfirm = {
                         val result = galleryViewModel.buildPickerResult()

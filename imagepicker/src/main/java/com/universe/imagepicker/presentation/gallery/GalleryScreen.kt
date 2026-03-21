@@ -103,13 +103,7 @@ fun GalleryScreen(
                         onSelectionBadgeTap = {
                             onIntent(GalleryScreenIntent.ToggleImageSelection(image))
                         },
-                        onImageTap = {
-                            if (isSelected) {
-                                onOpenEditor(image)
-                            } else {
-                                onIntent(GalleryScreenIntent.ToggleImageSelection(image))
-                            }
-                        }
+                        onOpenEditor = { onOpenEditor(image) }
                     )
                 }
             }
