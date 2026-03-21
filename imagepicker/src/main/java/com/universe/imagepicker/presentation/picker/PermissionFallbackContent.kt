@@ -50,19 +50,10 @@ internal fun PermissionFallbackContent(
 
         Button(
             onClick = {
-                when (state.permissionStatus) {
-                    PermissionStatus.PERMANENTLY_DENIED ->
-                        onIntent(ImagePickerIntent.OpenSettingsClick)
-                    PermissionStatus.PARTIALLY_GRANTED,
-                    PermissionStatus.DENIED -> {
-                        onIntent(
-                            ImagePickerIntent.OnPermissionEvaluated(
-                                status = state.permissionStatus,
-                                source = PermissionCheckSource.RETRY_BUTTON
-                            )
-                        )
-                    }
-                    PermissionStatus.GRANTED -> Unit
+                if (state.permissionStatus == PermissionStatus.PERMANENTLY_DENIED) {
+                    onIntent(ImagePickerIntent.OpenSettingsClick)
+                } else {
+                    onIntent(ImagePickerIntent.RequestPermissionClick)
                 }
             },
             modifier = Modifier.padding(top = 16.dp)

@@ -23,10 +23,26 @@ class ImageFileDataSource(
     suspend fun rotate(sourceUri: Uri, degrees: Int): Uri =
         withContext(Dispatchers.Default) {
             val bitmap = decodeBitmap(sourceUri)
-            val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+            val normalizedDegrees = degrees % 360
+
+            if (normalizedDegrees == 0) {
+                return@withContext saveToCacheFile(
+                    bitmap = bitmap,
+                    fileName = "rotate_${degrees}_${System.currentTimeMillis()}.jpg"
+                )
+            }
+
+            val matrix = Matrix().apply { postRotate(normalizedDegrees.toFloat()) }
             val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-            bitmap.recycle()
-            saveToCacheFile(rotated, "rotate_${degrees}_${System.currentTimeMillis()}.jpg")
+
+            if (rotated !== bitmap) {
+                bitmap.recycle()
+            }
+
+            saveToCacheFile(
+                bitmap = rotated,
+                fileName = "rotate_${degrees}_${System.currentTimeMillis()}.jpg"
+            )
         }
 
     suspend fun crop(sourceUri: Uri, cropRect: CropRect): Uri =
@@ -37,7 +53,11 @@ class ImageFileDataSource(
             val w = ((cropRect.right - cropRect.left) * bitmap.width).toInt()
             val h = ((cropRect.bottom - cropRect.top) * bitmap.height).toInt()
             val cropped = Bitmap.createBitmap(bitmap, x, y, w, h)
-            bitmap.recycle()
+
+            if (cropped !== bitmap) {
+                bitmap.recycle()
+            }
+
             saveToCacheFile(cropped, "crop_${System.currentTimeMillis()}.jpg")
         }
 
@@ -53,10 +73,15 @@ class ImageFileDataSource(
 
     private fun saveToCacheFile(bitmap: Bitmap, fileName: String): Uri {
         val file = File(cacheDir, fileName)
-        FileOutputStream(file).use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it)
+        try {
+            FileOutputStream(file).use {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it)
+            }
+            return Uri.fromFile(file)
+        } finally {
+            if (!bitmap.isRecycled) {
+                bitmap.recycle()
+            }
         }
-        bitmap.recycle()
-        return Uri.fromFile(file)
     }
 }
