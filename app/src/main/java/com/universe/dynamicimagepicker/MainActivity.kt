@@ -155,23 +155,6 @@ private fun SelectedImageTile(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        if (image.editedUri != null || image.rotationDegrees != 0 || image.isCropped) {
-            Text(
-                text = buildList {
-                    if (image.editedUri != null) add("편집됨")
-                    if (image.rotationDegrees != 0) add("${image.rotationDegrees}도")
-                    if (image.isCropped) add("크롭")
-                }.joinToString(" · "),
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
     }
 }
 

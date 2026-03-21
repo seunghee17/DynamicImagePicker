@@ -136,17 +136,15 @@ fun ImagePickerScreen(
                 GalleryScreen(
                     modifier = modifier,
                     state = galleryState,
+                    effect = galleryViewModel.effect,
                     onIntent = galleryViewModel::handleIntent,
                     onOpenEditor = { image ->
                         viewModel.handleIntent(ImagePickerIntent.OpenEditor(image = image))
                     },
-                    onConfirm = {
-                        val result = galleryViewModel.buildPickerResult()
-                        galleryViewModel.handleIntent(GalleryScreenIntent.ResetSelection)
+                    onConfirm = { result ->
                         viewModel.handleIntent(ImagePickerIntent.ConfirmSelection(result))
                     },
                     onCancel = {
-                        galleryViewModel.handleIntent(GalleryScreenIntent.ResetSelection)
                         viewModel.handleIntent(ImagePickerIntent.Cancel)
                     }
                 )

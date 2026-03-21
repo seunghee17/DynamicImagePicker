@@ -11,7 +11,6 @@ data class GalleryScreenState(
     val selectedImages: List<GalleryImage> = emptyList(),
     val isLoadingImages: Boolean = false,
     val maxSelectionCount: Int = 10,
-    val selectionLimitMessage: String? = null,
     val error: String? = null,
     val editResults: Map<Long, PickedImage> = emptyMap()
 ) {

@@ -2,15 +2,18 @@ package com.universe.imagepicker.presentation.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PickedImage
 import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
 import com.universe.imagepicker.domain.usecase.GetImagesInAlbumUseCase
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -23,6 +26,9 @@ class GalleryScreenViewModel(
     private val _state = MutableStateFlow(GalleryScreenState(maxSelectionCount = maxSelectionCount))
     val state: StateFlow<GalleryScreenState> = _state.asStateFlow()
 
+    private val _effect = Channel<GalleryScreenEffect>(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
+
     private var albumsObserved = false
 
     fun handleIntent(intent: GalleryScreenIntent) {
@@ -34,19 +40,9 @@ class GalleryScreenViewModel(
             }
             is GalleryScreenIntent.ToggleImageSelection -> toggleSelection(intent.image)
             is GalleryScreenIntent.OnEditResult -> applyEditResult(intent.pickedImage)
-            GalleryScreenIntent.ResetSelection -> resetSelection()
-            GalleryScreenIntent.DismissSelectionLimitMessage -> {
-                _state.update { it.copy(selectionLimitMessage = null) }
-            }
+            GalleryScreenIntent.Confirm -> confirmSelection()
+            GalleryScreenIntent.Cancel -> cancel()
         }
-    }
-
-    fun buildPickerResult(): PickerResult {
-        val current = _state.value
-        val items = current.selectedImages.map { image ->
-            current.editResults[image.id] ?: PickedImage(originalUri = image.uri)
-        }
-        return PickerResult(items)
     }
 
     private fun observeAlbums() {
@@ -76,7 +72,7 @@ class GalleryScreenViewModel(
         }
     }
 
-    private fun toggleSelection(image: com.universe.imagepicker.domain.model.GalleryImage) {
+    private fun toggleSelection(image: GalleryImage) {
         val current = _state.value
         val selected = current.selectedImages.toMutableList()
 
@@ -87,9 +83,11 @@ class GalleryScreenViewModel(
         }
 
         if (current.isSelectionLimitReached) {
-            _state.update {
-                it.copy(
-                    selectionLimitMessage = "이미지는 최대 ${current.maxSelectionCount}장까지 선택할 수 있습니다."
+            viewModelScope.launch {
+                _effect.send(
+                    GalleryScreenEffect.ShowSelectionLimitSnackbar(
+                        "이미지는 최대 ${current.maxSelectionCount}장까지 선택할 수 있습니다."
+                    )
                 )
             }
             return
@@ -109,11 +107,33 @@ class GalleryScreenViewModel(
         }
     }
 
+    private fun confirmSelection() {
+        val result = buildPickerResult()
+        resetSelection()
+        viewModelScope.launch {
+            _effect.send(GalleryScreenEffect.SelectionConfirmed(result))
+        }
+    }
+
+    private fun cancel() {
+        resetSelection()
+        viewModelScope.launch {
+            _effect.send(GalleryScreenEffect.Cancelled)
+        }
+    }
+
+    private fun buildPickerResult(): PickerResult {
+        val current = _state.value
+        val items = current.selectedImages.map { image ->
+            current.editResults[image.id] ?: PickedImage(originalUri = image.uri)
+        }
+        return PickerResult(items)
+    }
+
     private fun resetSelection() {
         _state.update {
             it.copy(
                 selectedImages = emptyList(),
-                selectionLimitMessage = null,
                 editResults = emptyMap()
             )
         }
