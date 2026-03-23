@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import androidx.exifinterface.media.ExifInterface
@@ -21,7 +22,7 @@ import java.io.FileOutputStream
  *             비트맵 디코딩이 전혀 없으므로 OOM 위험 없음.
  *             Coil과 BitmapRegionDecoder 모두 EXIF를 읽으므로 올바른 방향으로 표시/크롭됨.
  * - crop(): BitmapRegionDecoder로 크롭 영역만 디코딩 → 전체 로드 대비 peak 메모리 대폭 절감.
- *           EXIF 방향 보정 후 좌표 변환하여 Coil 표시와 일치시킴.
+ *           EXIF 방향 보정 후 좌표 변환, 디코딩된 비트맵에 회전을 픽셀로 적용하여 올바른 방향으로 저장.
  */
 class ImageFileDataSource(
     private val context: Context
@@ -79,17 +80,21 @@ class ImageFileDataSource(
         }
 
     /**
-     * BitmapRegionDecoder를 사용해 크롭 영역만 디코딩.
-     * content:// URI는 EXIF 회전을 읽어 cropRect 좌표를 raw-file 공간으로 변환함.
+     * BitmapRegionDecoder를 사용해 크롭 영역만 디코딩한 뒤, EXIF 회전을 픽셀에 적용하여 저장한다.
+     *
+     * [메모리]
+     * 크롭 영역 비트맵만 처리하므로, 원본 전체 대비 peak 메모리가 크롭 비율만큼 줄어든다.
+     * (예: 50% 크롭 → peak ≈ 원본의 50%)
      */
     suspend fun crop(sourceUri: Uri, cropRect: CropRect): Uri =
         withContext(Dispatchers.IO) {
             val exifDegrees = readExifDegrees(sourceUri)
+            // 사용자 선택 좌표(표시 공간) → raw 픽셀 좌표로 역변환
             val adjustedRect = transformCropRectForExif(cropRect, exifDegrees)
 
-            // BitmapRegionDecoder로 해당 영역만 디코딩 (OOM 방지) -> 필요한 영역만 디코딩해서 메모리 절약
-            val cropped = context.contentResolver.openInputStream(sourceUri)?.use { stream ->
+            val decoded = context.contentResolver.openInputStream(sourceUri)?.use { stream ->
                 val decoder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // bitmapRegionDecoder은 EXIF를 무시하고 raw 픽셀
                     BitmapRegionDecoder.newInstance(stream)
                 } else {
                     @Suppress("DEPRECATION")
@@ -105,15 +110,17 @@ class ImageFileDataSource(
                     val r = (adjustedRect.right * rawW).toInt().coerceIn(x + 1, rawW)
                     val b = (adjustedRect.bottom * rawH).toInt().coerceIn(y + 1, rawH)
 
-                    val region = android.graphics.Rect(x, y, r, b)
-                    decoder.decodeRegion(region, BitmapFactory.Options())
+                    decoder.decodeRegion(android.graphics.Rect(x, y, r, b), BitmapFactory.Options())
                         ?: error("영역 디코딩 실패")
                 } finally {
                     decoder.recycle()
                 }
             } ?: error("InputStream을 열 수 없음: $sourceUri")
 
-            saveToCacheFile(cropped, "crop_${System.currentTimeMillis()}.jpg")
+            // raw 방향 비트맵에 EXIF 회전을 픽셀로 적용 → 올바른 방향으로 저장
+            // (저장 파일에는 EXIF가 없으므로, Coil이 회전 없이 그대로 표시하도록 픽셀을 맞춰둔다)
+            val oriented = applyRotationToBitmap(decoded, exifDegrees)
+            saveToCacheFile(oriented, "crop_${System.currentTimeMillis()}.jpg")
         }
 
     suspend fun clearCache() = withContext(Dispatchers.IO) {
@@ -125,7 +132,7 @@ class ImageFileDataSource(
     /**
      * URI에서 EXIF 회전 각도를 읽는다.
      * file:// URI는 ExifInterface(path), content:// URI는 ExifInterface(InputStream)를 사용.
-     * 캐시 파일(file://)은 EXIF가 없으므로 0이 반환됨.
+     * rotate()로 생성된 캐시 파일(file://)은 합산 회전각이 EXIF에 기록되어 있으므로 올바른 값이 반환됨.
      */
     private fun readExifDegrees(uri: Uri): Int {
         val orientation = runCatching {
@@ -195,10 +202,18 @@ class ImageFileDataSource(
 
     // ── 공통 유틸 ──────────────────────────────────────────────────────────────
 
-    private fun decodeBitmap(uri: Uri): Bitmap =
-        context.contentResolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it) ?: error("Bitmap 디코딩 실패: $uri")
-        } ?: error("InputStream을 열 수 없음: $uri")
+    /**
+     * 비트맵에 회전을 픽셀로 적용한다.
+     * crop() 결과 보정 전용: 크롭된 영역 비트맵(원본 대비 훨씬 작음)에만 사용하므로 메모리 부담이 적다.
+     * degrees == 0이면 입력 비트맵을 그대로 반환한다.
+     */
+    private fun applyRotationToBitmap(bitmap: Bitmap, degrees: Int): Bitmap {
+        if (degrees == 0) return bitmap
+        val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+        val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        if (rotated !== bitmap) bitmap.recycle()
+        return rotated
+    }
 
     private fun saveToCacheFile(bitmap: Bitmap, fileName: String): Uri {
         val file = File(cacheDir, fileName)
