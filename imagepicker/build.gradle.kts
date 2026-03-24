@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("maven-publish")
+    id("signing")
+}
+
+val localProperties = Properties()
+val localPropertiesFile = project.rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
 }
 
 android {
@@ -35,6 +45,42 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            // 라이브러리 정보 설정
+            groupId = "com.universe"
+            artifactId = "imagepicker"
+            version = "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
+}
+
+val keyId = localProperties.getProperty("signing.keyId")
+val password = localProperties.getProperty("signing.password")
+val secretKeyFile = localProperties.getProperty("signing.secretKeyRingFile")
+
+if (keyId != null && password != null && secretKeyFile != null) {
+    extra.set("signing.keyId", keyId)
+    extra.set("signing.password", password)
+    extra.set("signing.secretKeyRingFile", secretKeyFile)
+
+    signing {
+        sign(publishing.publications["release"])
     }
 }
 
