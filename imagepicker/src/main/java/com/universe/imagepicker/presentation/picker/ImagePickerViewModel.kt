@@ -14,9 +14,11 @@ import kotlinx.coroutines.launch
 class ImagePickerViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(ImagePickerContract.State())
+
+    // Activity-scoped이므로 세션이 바뀌어도 절대 0으로 리셋되지 않음
+    private var editorEntryCounter = 0L
     val state: StateFlow<ImagePickerContract.State> = _state.asStateFlow()
 
-    /** 각 Effect는 Channel을 통해 정확히 1회만 소비된다. */
     private val _effect = Channel<ImagePickerContract.Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
@@ -37,7 +39,7 @@ class ImagePickerViewModel : ViewModel() {
                 source = intent.source
             )
             is ImagePickerContract.Intent.OpenEditor ->
-                sendEffect(ImagePickerContract.Effect.NavigateToEditor(intent.image))
+                sendEffect(ImagePickerContract.Effect.NavigateToEditor(intent.image, editorEntryCounter++))
             is ImagePickerContract.Intent.ConfirmSelection ->
                 sendEffect(ImagePickerContract.Effect.ReturnResult(intent.result))
             ImagePickerContract.Intent.Cancel ->

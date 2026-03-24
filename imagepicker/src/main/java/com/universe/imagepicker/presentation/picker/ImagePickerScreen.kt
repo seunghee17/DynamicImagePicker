@@ -8,7 +8,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -49,7 +48,6 @@ fun ImagePickerScreen(
     val galleryState by galleryViewModel.state.collectAsState()
 
     var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
-    var nextEditorEntryId by rememberSaveable { mutableLongStateOf(0L) }
     var editorDestination by rememberSaveable(stateSaver = editorDestinationSaver()) {
         mutableStateOf<EditorDestination?>(null)
     }
@@ -119,11 +117,10 @@ fun ImagePickerScreen(
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 is ImagePickerContract.Effect.NavigateToEditor -> {
                     editorDestination = EditorDestination(
-                        entryId = nextEditorEntryId,
+                        entryId = effect.entryId,
                         imageId = effect.image.id,
                         originalUri = effect.image.uri
                     )
-                    nextEditorEntryId += 1
                 }
             }
         }
