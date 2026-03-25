@@ -84,9 +84,11 @@ fun ImagePickerScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // 권한 허용 시 갤러리 초기화
+    // 권한 허용(전체 또는 부분) 시 갤러리 초기화
     LaunchedEffect(state.permissionStatus) {
-        if (state.permissionStatus == PermissionStatus.GRANTED) {
+        if (state.permissionStatus == PermissionStatus.GRANTED ||
+            state.permissionStatus == PermissionStatus.PARTIALLY_GRANTED
+        ) {
             galleryViewModel.handleIntent(GalleryContract.Intent.Initialize)
         }
     }
@@ -126,8 +128,10 @@ fun ImagePickerScreen(
         }
     }
 
-    // 화면 라우팅: 권한 여부 → 갤러리 or 에디터 or 권한 안내
-    if (state.permissionStatus == PermissionStatus.GRANTED) {
+    // 화면 라우팅: 전체/부분 권한 → 갤러리, 미허용 → 권한 안내
+    val hasGalleryAccess = state.permissionStatus == PermissionStatus.GRANTED ||
+            state.permissionStatus == PermissionStatus.PARTIALLY_GRANTED
+    if (hasGalleryAccess) {
         if (editorDestination == null) {
             saveableStateHolder.SaveableStateProvider(key = GALLERY_SCREEN_KEY) {
                 GalleryScreen(
