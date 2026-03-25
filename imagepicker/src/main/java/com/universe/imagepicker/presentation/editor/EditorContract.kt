@@ -1,10 +1,10 @@
 package com.universe.imagepicker.presentation.editor
 
 import android.net.Uri
-import com.universe.imagepicker.domain.model.CropRect
-import com.universe.imagepicker.domain.model.PickedImage
+import com.universe.imagepicker.CropRect
+import com.universe.imagepicker.PickedImage
 
-interface EditorContract {
+internal interface EditorContract {
 
     enum class Mode { NORMAL, CROPPING }
 

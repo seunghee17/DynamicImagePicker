@@ -20,7 +20,7 @@ import com.universe.imagepicker.domain.model.GalleryAlbum
  * 앨범 선택 드롭다운.
  */
 @Composable
-fun AlbumDropdown(
+internal fun AlbumDropdown(
     modifier: Modifier = Modifier,
     albums: List<GalleryAlbum>,
     dropDownExpanded: Boolean,

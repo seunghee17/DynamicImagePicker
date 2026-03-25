@@ -1,9 +1,9 @@
 package com.universe.imagepicker.domain.repository
 
 import android.net.Uri
-import com.universe.imagepicker.domain.model.CropRect
+import com.universe.imagepicker.CropRect
 
-interface ImageEditRepository {
+internal interface ImageEditRepository {
     /**
      * [sourceUri]의 이미지를 [degrees]도 시계 방향 회전한 결과를 캐시에 저장하고 URI 반환.
      * 원본 파일은 변경되지 않는다.

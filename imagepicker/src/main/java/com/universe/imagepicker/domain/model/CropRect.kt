@@ -1,4 +1,4 @@
-package com.universe.imagepicker.domain.model
+package com.universe.imagepicker
 
 /**
  * 정규화된 크롭 영역. 모든 값은 이미지 크기 대비 [0f, 1f] 범위.

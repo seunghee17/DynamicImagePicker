@@ -17,14 +17,14 @@ import com.universe.imagepicker.domain.model.GalleryImage
 
 // 현재 터치한 좌표를 매개변수로 받는다
 // 이 아이템 영역 안에 현재 터치좌표가 들어가 있는가? 만약 찾은 아이템이 있다면 key 반환 없으면 null
-fun LazyGridState.gridItemKeyAtPosition(hitPoint: Offset): Long? =
+internal fun LazyGridState.gridItemKeyAtPosition(hitPoint: Offset): Long? =
     // 현재 화면에 보이는 아이템 정보 리스트
     layoutInfo.visibleItemsInfo.find { itemInfo ->
         itemInfo.size.toIntRect()
             .contains(hitPoint.round() - itemInfo.offset) // global 좌표를 item local 좌표로 변환
     }?.key as? Long
 
-fun Modifier.photoGridDragHandler(
+internal fun Modifier.photoGridDragHandler(
     lazyGridState: LazyGridState,
     haptics: HapticFeedback,
     selectedImages: List<GalleryImage>,

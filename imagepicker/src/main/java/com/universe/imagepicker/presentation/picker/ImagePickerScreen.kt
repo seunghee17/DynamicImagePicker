@@ -28,7 +28,7 @@ import com.universe.imagepicker.PickerResult
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun ImagePickerScreen(
+internal fun ImagePickerScreen(
     config: ImagePickerConfig,
     onResult: (PickerResult) -> Unit,
     onCancel: () -> Unit,

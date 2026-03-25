@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ImagePickerViewModel : ViewModel() {
+internal class ImagePickerViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(ImagePickerContract.State())
 

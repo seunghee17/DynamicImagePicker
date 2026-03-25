@@ -45,7 +45,7 @@ import coil.compose.rememberAsyncImagePainter
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditorScreen(
+internal fun EditorScreen(
     state: EditorContract.State,
     onIntent: (EditorContract.Intent) -> Unit,
     modifier: Modifier = Modifier,

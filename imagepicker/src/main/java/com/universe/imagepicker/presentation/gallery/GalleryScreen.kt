@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.Flow
 /// 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
 
 @Composable
-fun GalleryScreen(
+internal fun GalleryScreen(
     state: GalleryContract.State,
     effect: Flow<GalleryContract.Effect>,
     onIntent: (GalleryContract.Intent) -> Unit,

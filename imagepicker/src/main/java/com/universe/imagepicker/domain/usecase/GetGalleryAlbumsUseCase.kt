@@ -4,7 +4,7 @@ import com.universe.imagepicker.domain.model.GalleryAlbum
 import com.universe.imagepicker.domain.repository.GalleryRepository
 import kotlinx.coroutines.flow.Flow
 
-class GetGalleryAlbumsUseCase(
+internal class GetGalleryAlbumsUseCase(
     private val repository: GalleryRepository
 ) {
     operator fun invoke(): Flow<List<GalleryAlbum>> = repository.getAlbums()

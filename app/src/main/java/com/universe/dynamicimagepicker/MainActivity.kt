@@ -35,8 +35,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.universe.imagepicker.DynamicImagePicker
 import com.universe.imagepicker.ImagePickerConfig
-import com.universe.imagepicker.domain.model.PickedImage
-import com.universe.imagepicker.domain.model.PickerResult
+import com.universe.imagepicker.PickedImage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

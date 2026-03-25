@@ -1,6 +1,6 @@
 package com.universe.imagepicker.domain.model
 
-enum class PermissionStatus {
+internal enum class PermissionStatus {
     GRANTED,
     PARTIALLY_GRANTED,
     DENIED,

@@ -4,7 +4,7 @@ import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PermissionStatus
 import com.universe.imagepicker.PickerResult
 
-interface ImagePickerContract {
+internal interface ImagePickerContract {
 
     data class State(
         val permissionStatus: PermissionStatus = PermissionStatus.DENIED,

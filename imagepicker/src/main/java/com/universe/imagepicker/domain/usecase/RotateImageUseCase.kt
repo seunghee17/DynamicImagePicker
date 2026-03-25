@@ -3,7 +3,7 @@ package com.universe.imagepicker.domain.usecase
 import android.net.Uri
 import com.universe.imagepicker.domain.repository.ImageEditRepository
 
-class RotateImageUseCase(
+internal class RotateImageUseCase(
     private val repository: ImageEditRepository
 ) {
     /**

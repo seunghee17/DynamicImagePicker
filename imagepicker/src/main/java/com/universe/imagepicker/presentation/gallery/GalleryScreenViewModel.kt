@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class GalleryScreenViewModel(
+internal class GalleryScreenViewModel(
     private val getAlbums: GetGalleryAlbumsUseCase,
     private val getImagesInAlbum: GetImagesInAlbumUseCase,
     private val clearEditCache: ClearEditCacheUseCase,

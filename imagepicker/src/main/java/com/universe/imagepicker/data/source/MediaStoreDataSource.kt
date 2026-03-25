@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 /**
  * MediaStore ContentResolver를 통해 기기 갤러리 이미지를 조회한다.
  */
-class MediaStoreDataSource(
+internal class MediaStoreDataSource(
     private val contentResolver: ContentResolver
 ) {
     private val collection: Uri

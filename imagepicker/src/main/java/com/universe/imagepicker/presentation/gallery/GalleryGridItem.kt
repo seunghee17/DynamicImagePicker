@@ -26,7 +26,7 @@ import com.universe.imagepicker.presentation.component.SelectionBadge
  * - 선택 시: 배지 번호 및 오버레이 표시
  */
 @Composable
-fun GalleryGridItem(
+internal fun GalleryGridItem(
     image: GalleryImage,
     selectionOrder: Int?,       // null = 미선택, 1 이상 = 선택 순서
     onOpenEditor: () -> Unit,

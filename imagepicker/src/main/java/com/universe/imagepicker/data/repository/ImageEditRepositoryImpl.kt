@@ -2,10 +2,10 @@ package com.universe.imagepicker.data.repository
 
 import android.net.Uri
 import com.universe.imagepicker.data.source.ImageFileDataSource
-import com.universe.imagepicker.domain.model.CropRect
+import com.universe.imagepicker.CropRect
 import com.universe.imagepicker.domain.repository.ImageEditRepository
 
-class ImageEditRepositoryImpl(
+internal class ImageEditRepositoryImpl(
     private val dataSource: ImageFileDataSource
 ) : ImageEditRepository {
 

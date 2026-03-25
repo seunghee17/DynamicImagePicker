@@ -14,7 +14,7 @@ import com.universe.imagepicker.presentation.gallery.AlbumDropdown
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBarWithCount(
+internal fun TopBarWithCount(
     selectedCount: Int,
     albums: List<GalleryAlbum>,
     dropDownExpanded: Boolean,

@@ -5,7 +5,7 @@ import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.PickedImage
 import com.universe.imagepicker.PickerResult
 
-interface GalleryContract {
+internal interface GalleryContract {
 
     data class State(
         val albums: List<GalleryAlbum> = emptyList(),

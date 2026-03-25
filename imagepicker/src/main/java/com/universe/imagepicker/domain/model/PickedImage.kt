@@ -1,6 +1,7 @@
-package com.universe.imagepicker.domain.model
+package com.universe.imagepicker
 
 import android.net.Uri
+import com.universe.imagepicker.CropRect
 
 data class PickedImage(
     val originalUri: Uri,

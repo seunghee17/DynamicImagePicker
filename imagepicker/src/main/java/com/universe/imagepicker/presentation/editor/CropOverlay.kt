@@ -22,7 +22,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.universe.imagepicker.domain.model.CropRect
+import com.universe.imagepicker.CropRect
 import kotlin.math.min
 
 private val HANDLE_TOUCH_SIZE = 48.dp   // 터치 영역
@@ -43,7 +43,7 @@ private const val MIN_CROP_FRACTION = 0.05f  // 최소 크롭 영역 (이미지�
  * @param onCropRectChange cropRect가 바뀔 때 호출 (드래그 중 실시간)
  */
 @Composable
-fun BoxScope.CropOverlay(
+internal fun BoxScope.CropOverlay(
     cropRect: CropRect,
     imageRect: Rect,
     onCropRectChange: (CropRect) -> Unit,
@@ -271,7 +271,7 @@ private fun buildCropRect(
  * [반환값]
  * 컨테이너 좌표계 기준의 이미지 렌더 영역 Rect (픽셀 절대좌표)
  */
-fun calculateImageRect(containerSize: IntSize, imageSize: IntSize): Rect {
+internal fun calculateImageRect(containerSize: IntSize, imageSize: IntSize): Rect {
     if (imageSize.width <= 0 || imageSize.height <= 0) {
         // 이미지 크기 정보가 없으면 컨테이너 전체를 이미지 영역으로 간주 (방어 처리)
         return Rect(0f, 0f, containerSize.width.toFloat(), containerSize.height.toFloat())

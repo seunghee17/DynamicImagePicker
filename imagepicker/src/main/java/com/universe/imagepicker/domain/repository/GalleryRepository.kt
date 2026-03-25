@@ -4,7 +4,7 @@ import com.universe.imagepicker.domain.model.GalleryAlbum
 import com.universe.imagepicker.domain.model.GalleryImage
 import kotlinx.coroutines.flow.Flow
 
-interface GalleryRepository {
+internal interface GalleryRepository {
     /**
      * 기기의 모든 앨범 목록을 Flow로 반환.
      * MediaStore 변경 시 자동으로 갱신된다.

@@ -3,8 +3,8 @@ package com.universe.imagepicker.presentation.editor
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.universe.imagepicker.domain.model.CropRect
-import com.universe.imagepicker.domain.model.PickedImage
+import com.universe.imagepicker.CropRect
+import com.universe.imagepicker.PickedImage
 import com.universe.imagepicker.domain.usecase.CropImageUseCase
 import com.universe.imagepicker.domain.usecase.RotateImageUseCase
 import kotlinx.coroutines.Job
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
  *   rotate → pendingRotation=90, previewUri = rotate(originalUri, 90)
  *   crop(previewUri, rect) → committedUri = 크롭결과 ✓
  */
-class EditorViewModel(
+internal class EditorViewModel(
     originalUri: Uri,
     private val rotateImage: RotateImageUseCase,
     private val cropImage: CropImageUseCase,

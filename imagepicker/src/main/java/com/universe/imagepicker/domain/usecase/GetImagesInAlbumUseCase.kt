@@ -3,7 +3,7 @@ package com.universe.imagepicker.domain.usecase
 import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.repository.GalleryRepository
 
-class GetImagesInAlbumUseCase(
+internal class GetImagesInAlbumUseCase(
     private val repository: GalleryRepository
 ) {
     /**

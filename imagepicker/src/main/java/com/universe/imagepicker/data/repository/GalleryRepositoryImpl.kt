@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 
-class GalleryRepositoryImpl(
+internal class GalleryRepositoryImpl(
     private val dataSource: MediaStoreDataSource,
     private val contentResolver: ContentResolver,
 ) : GalleryRepository {

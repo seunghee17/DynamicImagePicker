@@ -1,6 +1,7 @@
 package com.universe.imagepicker.presentation.picker
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -11,7 +12,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.universe.imagepicker.domain.model.PickedImage
+import com.universe.imagepicker.PickedImage
 import com.universe.imagepicker.presentation.editor.EditorContract
 import com.universe.imagepicker.presentation.editor.EditorScreen
 import com.universe.imagepicker.presentation.editor.EditorViewModel
@@ -70,6 +71,7 @@ internal fun EditorRoute(
                 is EditorContract.Effect.ReturnEditedImage -> onEditApplied(effect.pickedImage)
                 EditorContract.Effect.Cancelled -> onDismiss()
                 is EditorContract.Effect.ShowError -> {
+                    Log.d("TTAG", "에러 ${effect.message}")
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                     onError(effect.message)
                 }

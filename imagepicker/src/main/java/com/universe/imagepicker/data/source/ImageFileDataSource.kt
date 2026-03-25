@@ -9,7 +9,7 @@ import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
-import com.universe.imagepicker.domain.model.CropRect
+import com.universe.imagepicker.CropRect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -25,7 +25,7 @@ import java.io.FileOutputStream
  * - crop(): BitmapRegionDecoder로 크롭 영역만 디코딩 → 전체 로드 대비 peak 메모리 대폭 절감.
  *           EXIF 방향 보정 후 좌표 변환, 디코딩된 비트맵에 회전을 픽셀로 적용하여 올바른 방향으로 저장.
  */
-class ImageFileDataSource(
+internal class ImageFileDataSource(
     private val context: Context
 ) {
     private val cacheDir: File

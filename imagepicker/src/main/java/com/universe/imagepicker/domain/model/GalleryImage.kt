@@ -2,7 +2,7 @@ package com.universe.imagepicker.domain.model
 
 import android.net.Uri
 
-data class GalleryImage(
+internal data class GalleryImage(
     val id: Long,
     val uri: Uri,
     val displayName: String,

@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
  * 선택된 이미지의 순서 번호를 표시하는 원형 배지.
  */
 @Composable
-fun SelectionBadge(
+internal fun SelectionBadge(
     modifier: Modifier = Modifier,
     order: Int?,
     onTap: () -> Unit,
