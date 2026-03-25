@@ -18,7 +18,7 @@ internal class EditorViewModelFactory(
         modelClass: Class<T>,
         extras: CreationExtras
     ): T {
-        val dataSource = ImageFileDataSource(context)
+        val dataSource = ImageFileDataSource(context.applicationContext)
         val repository = ImageEditRepositoryImpl(dataSource)
         return EditorViewModel(
             originalUri,
