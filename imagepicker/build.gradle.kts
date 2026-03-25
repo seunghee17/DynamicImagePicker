@@ -65,6 +65,31 @@ publishing {
             afterEvaluate {
                 from(components["release"])
             }
+
+            pom {
+                name.set("Dynamic Image Picker")
+                description.set("Android Compose 기반 편집가능한 이미지 픽커 라이브러리")
+                url.set("https://github.com/seunghee17/DynamicImagePicker")
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("seunghee17")
+                        name.set("Seunghee")
+                        email.set("seunghuisong41@gmail.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:github.com/seunghee17/DynamicImagePicker.git")
+                    developerConnection.set("scm:git:ssh://github.com/seunghee17/DynamicImagePicker.git")
+                    url.set("https://github.com/seunghee17/DynamicImagePicker")
+                }
+            }
         }
     }
 
