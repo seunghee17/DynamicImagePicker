@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.FileProvider
 import com.universe.imagepicker.domain.model.CropRect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -76,7 +77,7 @@ class ImageFileDataSource(
                 saveAttributes()
             }
 
-            Uri.fromFile(cacheFile)
+            uriForCacheFile(cacheFile)
         }
 
     /**
@@ -221,9 +222,19 @@ class ImageFileDataSource(
             FileOutputStream(file).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
             }
-            return Uri.fromFile(file)
+            return uriForCacheFile(file)
         } finally {
             if (!bitmap.isRecycled) bitmap.recycle()
         }
+    }
+
+    /**
+     * 캐시 파일에 대한 content:// URI를 반환한다.
+     * file:// URI는 API 24+ 에서 앱 간 공유 시 FileUriExposedException을 유발하므로
+     * FileProvider를 통해 content:// URI로 변환한다.
+     */
+    private fun uriForCacheFile(file: File): Uri {
+        val authority = "${context.packageName}.imagepicker.fileprovider"
+        return FileProvider.getUriForFile(context, authority, file)
     }
 }

@@ -10,4 +10,17 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
+    <application>
+        <!--
+            라이브러리 전용 FileProvider.
+            authority = "${applicationId}.imagepicker.fileprovider"
+            호스트 앱 FileProvider와 authority가 다르므로 충돌 없음.
+        -->
+        <provider
+            android:name="com.universe.imagepicker.ImagePickerFileProvider"
+            android:authorities="${applicationId}.imagepicker.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
+
 </manifest>
