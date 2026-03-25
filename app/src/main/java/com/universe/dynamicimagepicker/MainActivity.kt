@@ -33,9 +33,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.universe.imagepicker.DynamicImagePicker
-import com.universe.imagepicker.ImagePickerConfig
-import com.universe.imagepicker.PickedImage
+import io.github.seunghee17.imagepicker.DynamicImagePicker
+import io.github.seunghee17.imagepicker.ImagePickerConfig
+import io.github.seunghee17.imagepicker.PickedImage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

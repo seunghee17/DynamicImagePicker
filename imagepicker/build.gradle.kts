@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.universe.imagepicker"
+    namespace = "io.github.seunghee17.imagepicker"
     compileSdk = 36
 
     defaultConfig {

@@ -17,7 +17,7 @@
             호스트 앱 FileProvider와 authority가 다르므로 충돌 없음.
         -->
         <provider
-            android:name="com.universe.imagepicker.ImagePickerFileProvider"
+            android:name="io.github.seunghee17.imagepicker.ImagePickerFileProvider"
             android:authorities="${applicationId}.imagepicker.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
