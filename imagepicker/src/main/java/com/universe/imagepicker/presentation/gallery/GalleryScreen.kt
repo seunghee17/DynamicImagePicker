@@ -29,6 +29,7 @@ import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.presentation.component.TopBarWithCount
 import com.universe.imagepicker.presentation.utils.photoGridDragHandler
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 
 /// 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
@@ -63,6 +64,15 @@ fun GalleryScreen(
     // 이미지 로드 실패 시 토스트 표시
     LaunchedEffect(state.error) {
         state.error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
+
+    // 드래그 중 autoScrollSpeed 값에 따라 그리드를 자동 스크롤
+    LaunchedEffect(gridState) {
+        while (true) {
+            val speed = autoScrollSpeed.floatValue
+            if (speed != 0f) gridState.scrollBy(speed)
+            delay(16L) // ~60fps
+        }
     }
 
     Scaffold(
