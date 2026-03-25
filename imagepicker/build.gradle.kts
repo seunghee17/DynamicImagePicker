@@ -87,8 +87,6 @@ if (keyId != null && password != null && secretKeyFile != null) {
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-
     // Lifecycle + ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -97,6 +95,7 @@ dependencies {
 
     // Activity
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.exifinterface)
 
     // Compose
     val composeBom = platform(libs.androidx.compose.bom)
