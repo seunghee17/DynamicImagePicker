@@ -14,6 +14,19 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
+fun resolvePublishProperty(primaryKey: String, fallbackKey: String? = null): String? {
+    return providers.gradleProperty(primaryKey).orNull
+        ?: fallbackKey?.let { providers.gradleProperty(it).orNull }
+        ?: localProperties.getProperty(primaryKey)
+        ?: fallbackKey?.let(localProperties::getProperty)
+}
+
+val keyId = resolvePublishProperty("signing.keyId")
+val signingPassword = resolvePublishProperty("signing.password")
+val secretKeyFile = resolvePublishProperty("signing.secretKeyRingFile")
+val centralUsername = resolvePublishProperty("centralUsername", "ossrhUsername")
+val centralPassword = resolvePublishProperty("centralPassword", "ossrhPassword")
+
 android {
     namespace = "io.github.seunghee17.imagepicker"
     compileSdk = 36
@@ -95,25 +108,22 @@ publishing {
 
     repositories {
         maven {
-            // Maven Central Portal용 배포 주소
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-
+            name = "central"
+            url = uri("https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/")
             credentials {
-                username = localProperties.getProperty("ossrhUsername")
-                password = localProperties.getProperty("ossrhPassword")
+                username = centralUsername
+                password = centralPassword
             }
         }
     }
 }
 
-val keyId = localProperties.getProperty("signing.keyId")
-val password = localProperties.getProperty("signing.password")
-val secretKeyFile = localProperties.getProperty("signing.secretKeyRingFile")
-
-if (keyId != null && password != null && secretKeyFile != null) {
+if (keyId != null && signingPassword != null && secretKeyFile != null) {
     extra.set("signing.keyId", keyId)
-    extra.set("signing.password", password)
+    extra.set("signing.password", signingPassword)
     extra.set("signing.secretKeyRingFile", secretKeyFile)
+    extra.set("centralUsername", centralUsername)
+    extra.set("centralPassword", centralPassword)
 
     signing {
         sign(publishing.publications["release"])
