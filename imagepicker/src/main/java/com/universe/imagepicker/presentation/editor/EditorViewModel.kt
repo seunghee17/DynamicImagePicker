@@ -111,6 +111,7 @@ class EditorViewModel(
                     cropRect = CropRect.FULL,  // 다음 크롭 모드 진입 시 전체 영역부터 시작
                     isSaving = false,
                     hasUnsavedChanges = true,
+                    hasCropApplied = true,
                 ) }
             }.onFailure { e ->
                 _state.update { it.copy(isSaving = false) }
@@ -161,6 +162,7 @@ class EditorViewModel(
             // 크롭과 회전이 조합된 경우 단일 CropRect로 표현이 불가하므로 null.
             // 편집 결과는 editedUri에 픽셀로 반영되어 있다.
             cropRect = null,
+            isCropped = current.hasCropApplied,
         )
         _state.update { it.copy(isSaving = false) }
         sendEffect(EditorContract.Effect.ReturnEditedImage(pickedImage))

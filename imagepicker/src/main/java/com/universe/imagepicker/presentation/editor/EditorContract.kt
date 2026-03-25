@@ -36,6 +36,8 @@ interface EditorContract {
         val mode: Mode = Mode.NORMAL,
         val isSaving: Boolean = false,
         val hasUnsavedChanges: Boolean = false,
+        /** 크롭이 한 번 이상 확정(ApplyCrop) 된 경우 true */
+        val hasCropApplied: Boolean = false,
     )
 
     sealed class Intent {
