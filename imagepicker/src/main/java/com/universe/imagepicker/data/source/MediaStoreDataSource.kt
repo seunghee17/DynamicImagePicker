@@ -76,18 +76,47 @@ class MediaStoreDataSource(
 
     suspend fun queryAlbums(): List<GalleryAlbum> =
         withContext(Dispatchers.IO) {
-            // 앨범별 대표 이미지와 개수를 구하기 위해 전체 이미지를 조회 후 그룹핑, 재활용 가능
-            val allImages = queryImages()
-            allImages
-                .groupBy { it.albumId }
-                .map { (albumId, images) ->
+            // 앨범 목록만 조회하기 위한 경량 쿼리 (전체 이미지 로드 없이 버킷 정보만 조회)
+            val projection = arrayOf(
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.BUCKET_ID,
+                MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
+            )
+            val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+
+            // 버킷별로 첫 번째 이미지(대표 이미지)와 개수를 수집
+            val coverUriMap = mutableMapOf<String, Uri>()      // albumId → coverUri
+            val albumNameMap = mutableMapOf<String, String>()  // albumId → albumName
+            val albumCountMap = mutableMapOf<String, Int>()    // albumId → count
+
+            contentResolver.query(
+                collection, projection, null, null, sortOrder
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
+                val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+
+                while (cursor.moveToNext()) {
+                    val bucketId = cursor.getString(bucketIdCol) ?: ""
+                    albumCountMap[bucketId] = (albumCountMap[bucketId] ?: 0) + 1
+                    if (!coverUriMap.containsKey(bucketId)) {
+                        val id = cursor.getLong(idCol)
+                        coverUriMap[bucketId] = ContentUris.withAppendedId(collection, id)
+                        albumNameMap[bucketId] = cursor.getString(bucketNameCol) ?: ""
+                    }
+                }
+            }
+
+            albumCountMap.entries
+                .sortedByDescending { it.value }
+                .mapNotNull { (albumId, count) ->
+                    val coverUri = coverUriMap[albumId] ?: return@mapNotNull null
                     GalleryAlbum(
                         id = albumId,
-                        name = images.first().albumName,
-                        coverUri = images.first().uri,
-                        imageCount = images.size
+                        name = albumNameMap[albumId] ?: "",
+                        coverUri = coverUri,
+                        imageCount = count
                     )
                 }
-                .sortedByDescending { it.imageCount } // 사진수가 많은 앨범 먼저 나오도록
         }
 }
