@@ -40,19 +40,19 @@ interface EditorContract {
         val hasCropApplied: Boolean = false,
     )
 
-    sealed class Intent {
-        object RotateClockwise : Intent()
-        object EnterCropMode : Intent()
-        data class UpdateCropRect(val rect: CropRect) : Intent()
-        object ApplyCrop : Intent()
-        object ExitCropMode : Intent()
-        object SaveAndReturn : Intent()
-        object Cancel : Intent()
+    sealed interface Intent {
+        data object RotateClockwise : Intent
+        data object EnterCropMode : Intent
+        data class UpdateCropRect(val rect: CropRect) : Intent
+        data object ApplyCrop : Intent
+        data object ExitCropMode : Intent
+        data object SaveAndReturn : Intent
+        data object Cancel : Intent
     }
 
-    sealed class Effect {
-        data class ReturnEditedImage(val pickedImage: PickedImage) : Effect()
-        object Cancelled : Effect()
-        data class ShowError(val message: String) : Effect()
+    sealed interface Effect {
+        data class ReturnEditedImage(val pickedImage: PickedImage) : Effect
+        data object Cancelled : Effect
+        data class ShowError(val message: String) : Effect
     }
 }

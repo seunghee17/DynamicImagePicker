@@ -11,32 +11,32 @@ interface ImagePickerContract {
         val hasRequestedPermission: Boolean = false
     )
 
-    sealed class Intent {
-        object Initialize : Intent()
-        object OnHostResumed : Intent()
-        object RequestPermissionClick : Intent()
-        object OpenSettingsClick : Intent()
+    sealed interface Intent {
+        data object Initialize : Intent
+        data object OnHostResumed : Intent
+        data object RequestPermissionClick : Intent
+        data object OpenSettingsClick : Intent
         data class OnPermissionEvaluated(
             val status: PermissionStatus,
             val source: PermissionCheckSource
-        ) : Intent()
+        ) : Intent
 
         // 화면 이동
-        data class OpenEditor(val image: GalleryImage) : Intent()
+        data class OpenEditor(val image: GalleryImage) : Intent
 
         // 완료/취소
-        data class ConfirmSelection(val result: PickerResult) : Intent()
-        object Cancel : Intent()
+        data class ConfirmSelection(val result: PickerResult) : Intent
+        data object Cancel : Intent
     }
 
-    sealed class Effect {
-        object NavigateToSettings : Effect()
-        object RequestPermission : Effect()
-        data class CheckPermission(val source: PermissionCheckSource) : Effect()
-        data class NavigateToEditor(val image: GalleryImage, val entryId: Long) : Effect()
-        data class ReturnResult(val result: PickerResult) : Effect()
-        object Cancelled : Effect()
-        data class ShowToast(val message: String) : Effect()
+    sealed interface Effect {
+        data object NavigateToSettings : Effect
+        data object RequestPermission : Effect
+        data class CheckPermission(val source: PermissionCheckSource) : Effect
+        data class NavigateToEditor(val image: GalleryImage, val entryId: Long) : Effect
+        data class ReturnResult(val result: PickerResult) : Effect
+        data object Cancelled : Effect
+        data class ShowToast(val message: String) : Effect
     }
 
     enum class PermissionCheckSource {
