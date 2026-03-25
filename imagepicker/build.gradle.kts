@@ -58,13 +58,24 @@ android {
 publishing {
     publications {
         create<MavenPublication>("release") {
-            // 라이브러리 정보 설정
-            groupId = "com.universe"
+            groupId = "io.github.seunghee17"
             artifactId = "imagepicker"
             version = "1.0.0"
 
             afterEvaluate {
                 from(components["release"])
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            // Maven Central Portal용 배포 주소
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+
+            credentials {
+                username = localProperties.getProperty("ossrhUsername")
+                password = localProperties.getProperty("ossrhPassword")
             }
         }
     }
