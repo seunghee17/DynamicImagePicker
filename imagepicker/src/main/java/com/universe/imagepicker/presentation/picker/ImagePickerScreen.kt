@@ -157,7 +157,8 @@ fun ImagePickerScreen(
                         editorDestination = null
                     },
                     onDismiss = { editorDestination = null },
-                    modifier = modifier
+                    modifier = modifier,
+                    allowEditing = config.allowEditing,
                 )
             }
         }

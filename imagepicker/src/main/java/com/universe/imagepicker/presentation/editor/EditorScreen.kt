@@ -48,7 +48,8 @@ import coil.compose.rememberAsyncImagePainter
 fun EditorScreen(
     state: EditorContract.State,
     onIntent: (EditorContract.Intent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    allowEditing: Boolean = true,
 ) {
     val isCropping = state.mode == EditorContract.Mode.CROPPING
 
@@ -96,8 +97,8 @@ fun EditorScreen(
                     .fillMaxWidth()
             )
 
-            // 하단 도구 버튼 (크롭 모드에서는 숨김)
-            if (!isCropping) {
+            // 하단 도구 버튼 (크롭 모드 또는 편집 비허용 시 숨김)
+            if (!isCropping && allowEditing) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -136,7 +137,6 @@ private fun ImageWithCropOverlay(
     // 컨테이너 크기와 이미지 intrinsic 크기를 추적하여 imageRect 계산
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
-    //
     val intrinsicSize: IntSize? = remember(painter.state) {
         (painter.state as? AsyncImagePainter.State.Success)
             ?.painter

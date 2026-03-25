@@ -50,7 +50,8 @@ internal fun EditorRoute(
     destination: EditorDestination,
     onEditApplied: (PickedImage) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    allowEditing: Boolean = true,
 ) {
     val context = LocalContext.current
     val viewModel: EditorViewModel = viewModel(
@@ -78,6 +79,7 @@ internal fun EditorRoute(
     EditorScreen(
         state = state,
         onIntent = viewModel::handleIntent,
-        modifier = modifier
+        modifier = modifier,
+        allowEditing = allowEditing,
     )
 }
