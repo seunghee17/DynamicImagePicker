@@ -20,7 +20,11 @@
             android:name="com.universe.imagepicker.ImagePickerFileProvider"
             android:authorities="${applicationId}.imagepicker.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true" />
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/imagepicker_file_paths" />
+        </provider>
     </application>
 
 </manifest>
