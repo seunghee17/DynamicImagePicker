@@ -14,6 +14,7 @@ internal interface GalleryContract {
         val selectedImages: List<GalleryImage> = emptyList(),
         val isLoadingImages: Boolean = false,
         val maxSelectionCount: Int = 10,
+        val showAlbumSelector: Boolean = true,
         val error: String? = null,
         val editResults: Map<Long, PickedImage> = emptyMap()
     ) {

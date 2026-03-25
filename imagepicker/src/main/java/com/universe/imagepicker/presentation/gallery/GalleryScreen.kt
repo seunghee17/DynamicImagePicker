@@ -93,6 +93,7 @@ internal fun GalleryScreen(
                 onAlbumSelected = { album ->
                     onIntent(GalleryContract.Intent.SelectAlbum(album))
                 },
+                showAlbumSelector = state.showAlbumSelector,
             )
         }
     ) { innerPadding ->

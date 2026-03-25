@@ -25,6 +25,7 @@ internal fun TopBarWithCount(
     maxCount: Int,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
+    showAlbumSelector: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -44,14 +45,16 @@ internal fun TopBarWithCount(
             ) {
                 Text("완료")
             }
-            AlbumDropdown(
-                albums = albums,
-                dropDownExpanded = dropDownExpanded,
-                openDropDown = openDropDown,
-                closeDropDown = closeDropDown,
-                selectedAlbum = selectedAlbum,
-                onAlbumSelected = onAlbumSelected
-            )
+            if (showAlbumSelector) {
+                AlbumDropdown(
+                    albums = albums,
+                    dropDownExpanded = dropDownExpanded,
+                    openDropDown = openDropDown,
+                    closeDropDown = closeDropDown,
+                    selectedAlbum = selectedAlbum,
+                    onAlbumSelected = onAlbumSelected
+                )
+            }
         }
     )
 }

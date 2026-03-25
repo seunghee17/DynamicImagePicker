@@ -31,7 +31,8 @@ internal class GalleryScreenViewModelFactory(
             getAlbums = GetGalleryAlbumsUseCase(galleryRepository),
             getImagesInAlbum = GetImagesInAlbumUseCase(galleryRepository),
             clearEditCache = ClearEditCacheUseCase(imageEditRepository),
-            maxSelectionCount = config.maxSelectionCount
+            maxSelectionCount = config.maxSelectionCount,
+            showAlbumSelector = config.showAlbumSelector,
         ) as T
     }
 }

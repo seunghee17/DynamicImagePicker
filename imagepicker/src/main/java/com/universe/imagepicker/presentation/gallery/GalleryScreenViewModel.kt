@@ -22,10 +22,16 @@ internal class GalleryScreenViewModel(
     private val getAlbums: GetGalleryAlbumsUseCase,
     private val getImagesInAlbum: GetImagesInAlbumUseCase,
     private val clearEditCache: ClearEditCacheUseCase,
-    maxSelectionCount: Int
+    maxSelectionCount: Int,
+    showAlbumSelector: Boolean = true,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(GalleryContract.State(maxSelectionCount = maxSelectionCount))
+    private val _state = MutableStateFlow(
+        GalleryContract.State(
+            maxSelectionCount = maxSelectionCount,
+            showAlbumSelector = showAlbumSelector,
+        )
+    )
     val state: StateFlow<GalleryContract.State> = _state.asStateFlow()
 
     private val _effect = Channel<GalleryContract.Effect>(Channel.BUFFERED)
