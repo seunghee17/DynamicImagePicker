@@ -50,6 +50,7 @@ internal fun EditorRoute(
     destination: EditorDestination,
     onEditApplied: (PickedImage) -> Unit,
     onDismiss: () -> Unit,
+    onError: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     allowEditing: Boolean = true,
 ) {
@@ -68,8 +69,10 @@ internal fun EditorRoute(
             when (effect) {
                 is EditorContract.Effect.ReturnEditedImage -> onEditApplied(effect.pickedImage)
                 EditorContract.Effect.Cancelled -> onDismiss()
-                is EditorContract.Effect.ShowError ->
+                is EditorContract.Effect.ShowError -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                    onError(effect.message)
+                }
             }
         }
     }

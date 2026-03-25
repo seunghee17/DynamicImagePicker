@@ -32,6 +32,7 @@ fun ImagePickerScreen(
     config: ImagePickerConfig,
     onResult: (PickerResult) -> Unit,
     onCancel: () -> Unit,
+    onError: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -161,6 +162,7 @@ fun ImagePickerScreen(
                         editorDestination = null
                     },
                     onDismiss = { editorDestination = null },
+                    onError = onError,
                     modifier = modifier,
                     allowEditing = config.allowEditing,
                 )
