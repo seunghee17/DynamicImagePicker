@@ -6,7 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,12 +40,12 @@ fun ImagePickerScreen(
     val viewModel: ImagePickerViewModel = viewModel(
         factory = ImagePickerViewModelFactory()
     )
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val galleryViewModel: GalleryScreenViewModel = viewModel(
         factory = GalleryScreenViewModelFactory(context = context, config = config)
     )
-    val galleryState by galleryViewModel.state.collectAsState()
+    val galleryState by galleryViewModel.state.collectAsStateWithLifecycle()
 
     var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
     var editorDestination by rememberSaveable(stateSaver = editorDestinationSaver()) {
