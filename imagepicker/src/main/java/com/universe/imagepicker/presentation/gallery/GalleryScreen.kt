@@ -1,5 +1,7 @@
 package com.universe.imagepicker.presentation.gallery
 
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,7 +19,9 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,7 @@ fun GalleryScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val gridState = rememberLazyGridState()
     val autoScrollSpeed = remember { mutableFloatStateOf(0f) }
@@ -53,6 +58,11 @@ fun GalleryScreen(
                 GalleryContract.Effect.Cancelled -> onCancel()
             }
         }
+    }
+
+    // 이미지 로드 실패 시 토스트 표시
+    LaunchedEffect(state.error) {
+        state.error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
 
     Scaffold(
@@ -76,7 +86,14 @@ fun GalleryScreen(
         }
     ) { innerPadding ->
         if (state.isLoadingImages) {
-            CircularProgressIndicator()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
