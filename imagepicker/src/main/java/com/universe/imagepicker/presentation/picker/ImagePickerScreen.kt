@@ -20,11 +20,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.universe.imagepicker.ImagePickerConfig
 import com.universe.imagepicker.domain.model.PermissionStatus
-import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.presentation.gallery.GalleryContract
 import com.universe.imagepicker.presentation.gallery.GalleryScreen
 import com.universe.imagepicker.presentation.gallery.GalleryScreenViewModel
 import com.universe.imagepicker.presentation.gallery.GalleryScreenViewModelFactory
+import com.universe.imagepicker.PickerResult
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable

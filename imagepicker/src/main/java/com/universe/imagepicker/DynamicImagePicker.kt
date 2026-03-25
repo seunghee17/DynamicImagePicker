@@ -2,8 +2,8 @@ package com.universe.imagepicker
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.presentation.picker.ImagePickerScreen
+import com.universe.imagepicker.PickerResult
 
 /**
  * DynamicImagePicker 라이브러리의 공개 진입점.

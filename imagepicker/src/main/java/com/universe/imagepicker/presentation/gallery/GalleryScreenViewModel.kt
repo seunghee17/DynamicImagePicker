@@ -2,12 +2,12 @@ package com.universe.imagepicker.presentation.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.universe.imagepicker.PickedImage
 import com.universe.imagepicker.domain.model.GalleryImage
-import com.universe.imagepicker.domain.model.PickedImage
-import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.domain.usecase.ClearEditCacheUseCase
 import com.universe.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
 import com.universe.imagepicker.domain.usecase.GetImagesInAlbumUseCase
+import com.universe.imagepicker.PickerResult
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

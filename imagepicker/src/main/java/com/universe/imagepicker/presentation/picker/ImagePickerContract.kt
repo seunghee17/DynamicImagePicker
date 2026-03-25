@@ -2,7 +2,7 @@ package com.universe.imagepicker.presentation.picker
 
 import com.universe.imagepicker.domain.model.GalleryImage
 import com.universe.imagepicker.domain.model.PermissionStatus
-import com.universe.imagepicker.domain.model.PickerResult
+import com.universe.imagepicker.PickerResult
 
 interface ImagePickerContract {
 

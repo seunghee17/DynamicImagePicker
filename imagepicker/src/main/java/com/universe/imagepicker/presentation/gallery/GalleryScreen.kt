@@ -27,9 +27,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.universe.imagepicker.domain.model.GalleryImage
-import com.universe.imagepicker.domain.model.PickerResult
 import com.universe.imagepicker.presentation.component.TopBarWithCount
 import com.universe.imagepicker.presentation.utils.photoGridDragHandler
+import com.universe.imagepicker.PickerResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 

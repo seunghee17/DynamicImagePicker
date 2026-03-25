@@ -2,8 +2,8 @@ package com.universe.imagepicker.presentation.gallery
 
 import com.universe.imagepicker.domain.model.GalleryAlbum
 import com.universe.imagepicker.domain.model.GalleryImage
-import com.universe.imagepicker.domain.model.PickedImage
-import com.universe.imagepicker.domain.model.PickerResult
+import com.universe.imagepicker.PickedImage
+import com.universe.imagepicker.PickerResult
 
 interface GalleryContract {
 
