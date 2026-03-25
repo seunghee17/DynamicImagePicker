@@ -22,7 +22,10 @@ internal class GalleryScreenViewModelFactory(
         extras: CreationExtras
     ): T {
         val appContext = context.applicationContext
-        val galleryRepository = GalleryRepositoryImpl(MediaStoreDataSource(appContext.contentResolver))
+        val galleryRepository = GalleryRepositoryImpl(
+            dataSource = MediaStoreDataSource(appContext.contentResolver),
+            contentResolver = appContext.contentResolver,
+        )
         val imageEditRepository = ImageEditRepositoryImpl(ImageFileDataSource(appContext))
         return GalleryScreenViewModel(
             getAlbums = GetGalleryAlbumsUseCase(galleryRepository),
