@@ -1,6 +1,7 @@
 package com.universe.imagepicker.presentation.gallery
 
 import android.widget.Toast
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
