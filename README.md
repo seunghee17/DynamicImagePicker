@@ -26,7 +26,7 @@ dependencies {
 ## Usage
 
 ```kotlin
-DynamicImagePicker.Content(
+DynamicImagePicker(
     config = ImagePickerConfig(maxSelectionCount = 10),
     onResult = { result -> /* handle PickerResult */ },
     onCancel = { /* handle cancel */ }
