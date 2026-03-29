@@ -111,7 +111,7 @@ internal fun ImagePickerScreen(
     }
 
     // Effect 처리
-    LaunchedEffect(viewModel, context, hasRequestedPermission) {
+    LaunchedEffect(hasRequestedPermission) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is ImagePickerContract.Effect.CheckPermission -> {

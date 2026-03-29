@@ -25,11 +25,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -147,7 +148,6 @@ internal fun EditorScreen(
                             activeOnIntent.value = onIntent
                         },
                         onEditApplied = onEditApplied,
-                        onDismiss = onDismiss,
                         onError = onError,
                     )
                 }
@@ -200,7 +200,6 @@ private fun EditorImagePage(
     isCurrentPage: Boolean,
     onActivate: (EditorContract.State, (EditorContract.Intent) -> Unit) -> Unit,
     onEditApplied: (PickedImage) -> Unit,
-    onDismiss: () -> Unit,
     onError: (String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -210,9 +209,12 @@ private fun EditorImagePage(
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // 현재 페이지가 되면 상위 상태 홀더를 즉시 업데이트
-    if (isCurrentPage) {
-        SideEffect { onActivate(state, viewModel::handleIntent) }
+    val latestOnActivate by rememberUpdatedState(onActivate)
+    LaunchedEffect(isCurrentPage) {
+        if (!isCurrentPage) return@LaunchedEffect
+        snapshotFlow { state }.collect { latestState ->
+            latestOnActivate(latestState, viewModel::handleIntent)
+        }
     }
 
     LaunchedEffect(Unit) {
