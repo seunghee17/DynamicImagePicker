@@ -352,6 +352,7 @@ enum class PermissionStatus { GRANTED, PARTIALLY_GRANTED, DENIED, PERMANENTLY_DE
 5. 해당 화면의 `*Intent`, `*State`, `*Effect` sealed class에 항목 추가
 6. ViewModel의 `handleIntent()`에 처리 로직 추가
 7. Composable에서 State/Effect 소비
+8. 모든 코드 수정은 공식 문서에 의거한 권장방식으로 접근할 것
 
 ### 2. UI 수정
 - 재사용 컴포넌트는 `presentation/component/`에 위치

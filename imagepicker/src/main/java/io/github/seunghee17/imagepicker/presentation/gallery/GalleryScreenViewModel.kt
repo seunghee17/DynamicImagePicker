@@ -2,29 +2,55 @@ package io.github.seunghee17.imagepicker.presentation.gallery
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import io.github.seunghee17.imagepicker.PickedImage
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.domain.usecase.ClearEditCacheUseCase
 import io.github.seunghee17.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
-import io.github.seunghee17.imagepicker.domain.usecase.GetImagesInAlbumUseCase
+import io.github.seunghee17.imagepicker.domain.usecase.GetPagedImagesUseCase
 import io.github.seunghee17.imagepicker.PickerResult
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class GalleryScreenViewModel(
     private val getAlbums: GetGalleryAlbumsUseCase,
-    private val getImagesInAlbum: GetImagesInAlbumUseCase,
+    private val getPagedImages: GetPagedImagesUseCase,
     private val clearEditCache: ClearEditCacheUseCase,
     maxSelectionCount: Int,
     showAlbumSelector: Boolean = true,
 ) : ViewModel() {
+
+    // 앨범 선택 상태: 아직 앨범 목록이 로드되지 않은 Pending vs 실제 선택된 Active
+    private sealed interface AlbumFilter {
+        data object Pending : AlbumFilter
+        data class Active(val albumId: String?) : AlbumFilter
+    }
+
+    private val _albumFilter = MutableStateFlow<AlbumFilter>(AlbumFilter.Pending)
+
+    /**
+     * 현재 선택된 앨범의 이미지를 페이지 단위로 방출하는 Flow.
+     * [GalleryScreen] 에서 [collectAsLazyPagingItems] 로 소비한다.
+     */
+    val pagingFlow: Flow<PagingData<GalleryImage>> = _albumFilter
+        .filterIsInstance<AlbumFilter.Active>()
+        .distinctUntilChanged()
+        .flatMapLatest { filter -> getPagedImages(filter.albumId) }
+        .cachedIn(viewModelScope)
 
     private val _state = MutableStateFlow(
         GalleryContract.State(
@@ -38,8 +64,6 @@ internal class GalleryScreenViewModel(
     val effect = _effect.receiveAsFlow()
 
     private var albumsObserved = false
-
-    // confirmSelection() 후 다음 세션 시작 시 캐시를 정리하기 위한 플래그
     private var pendingCacheClean = false
 
     fun handleIntent(intent: GalleryContract.Intent) {
@@ -53,7 +77,7 @@ internal class GalleryScreenViewModel(
             }
             is GalleryContract.Intent.SelectAlbum -> {
                 _state.update { it.copy(selectedAlbum = intent.album) }
-                loadImages(intent.album.id)
+                _albumFilter.value = AlbumFilter.Active(intent.album.id)
             }
             is GalleryContract.Intent.ToggleImageSelection -> toggleSelection(intent.image)
             is GalleryContract.Intent.OnEditResult -> applyEditResult(intent.pickedImage)
@@ -71,22 +95,13 @@ internal class GalleryScreenViewModel(
                     val selectedAlbum = current.selectedAlbum ?: albums.firstOrNull()
                     current.copy(albums = albums, selectedAlbum = selectedAlbum)
                 }
-                loadImages(_state.value.selectedAlbum?.id)
+                // 첫 번째 앨범 로드 시에만 Pending → Active 전환.
+                // 이후 ContentObserver 로 앨범이 갱신되어도 PagingSource 가 자체 invalidate 처리.
+                if (_albumFilter.value is AlbumFilter.Pending) {
+                    _albumFilter.value = AlbumFilter.Active(_state.value.selectedAlbum?.id)
+                }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun loadImages(albumId: String?) {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoadingImages = true, error = null) }
-            runCatching { getImagesInAlbum(albumId) }
-                .onSuccess { images ->
-                    _state.update { it.copy(images = images, isLoadingImages = false) }
-                }
-                .onFailure { e ->
-                    _state.update { it.copy(isLoadingImages = false, error = e.message) }
-                }
-        }
     }
 
     private fun toggleSelection(image: GalleryImage) {
@@ -127,7 +142,6 @@ internal class GalleryScreenViewModel(
     private fun confirmSelection() {
         val result = buildPickerResult()
         resetSelection()
-        // 호스트 앱이 editedUri 파일을 사용할 수 있도록 다음 세션 시작 시 정리
         pendingCacheClean = true
         viewModelScope.launch {
             _effect.send(GalleryContract.Effect.SelectionConfirmed(result))
@@ -136,7 +150,6 @@ internal class GalleryScreenViewModel(
 
     private fun cancel() {
         resetSelection()
-        // 결과를 반환하지 않으므로 캐시 파일 즉시 삭제
         viewModelScope.launch {
             _effect.send(GalleryContract.Effect.Cancelled)
             runCatching { clearEditCache() }
@@ -155,7 +168,7 @@ internal class GalleryScreenViewModel(
         _state.update {
             it.copy(
                 selectedImages = emptyList(),
-                editResults = emptyMap()
+                editResults = emptyMap(),
             )
         }
     }

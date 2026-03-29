@@ -3,6 +3,10 @@ package io.github.seunghee17.imagepicker.data.repository
 import android.content.ContentResolver
 import android.database.ContentObserver
 import android.provider.MediaStore
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import io.github.seunghee17.imagepicker.data.source.GalleryImagePagingSource
 import io.github.seunghee17.imagepicker.data.source.MediaStoreDataSource
 import io.github.seunghee17.imagepicker.domain.model.GalleryAlbum
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
@@ -23,7 +27,6 @@ internal class GalleryRepositoryImpl(
      * 최신 앨범 목록을 재emit한다.
      */
     override fun getAlbums(): Flow<List<GalleryAlbum>> = callbackFlow {
-        // 최초 emit
         send(dataSource.queryAlbums())
 
         val observer = object : ContentObserver(null) {
@@ -38,13 +41,19 @@ internal class GalleryRepositoryImpl(
         contentResolver.registerContentObserver(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             true,
-            observer
+            observer,
         )
 
         awaitClose { contentResolver.unregisterContentObserver(observer) }
     }
 
-    override suspend fun getImagesInAlbum(albumId: String?): List<GalleryImage> {
-        return dataSource.queryImages(albumId)
+    override fun getPagedImages(albumId: String?): Flow<PagingData<GalleryImage>> =
+        Pager(
+            config = PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false),
+            pagingSourceFactory = { GalleryImagePagingSource(contentResolver, albumId) },
+        ).flow
+
+    companion object {
+        private const val PAGE_SIZE = 30
     }
 }

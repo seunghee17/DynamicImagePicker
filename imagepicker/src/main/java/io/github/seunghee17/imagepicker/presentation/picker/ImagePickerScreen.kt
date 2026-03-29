@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.seunghee17.imagepicker.ImagePickerConfig
+import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.domain.model.PermissionStatus
 import io.github.seunghee17.imagepicker.presentation.gallery.GalleryContract
 import io.github.seunghee17.imagepicker.presentation.gallery.GalleryScreen
@@ -133,15 +134,17 @@ internal fun ImagePickerScreen(
                 is ImagePickerContract.Effect.ReturnResult -> onResult(effect.result)
                 is ImagePickerContract.Effect.Cancelled -> onCancel()
                 is ImagePickerContract.Effect.ShowToast ->
-                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, effect.message, android.widget.Toast.LENGTH_SHORT).show()
                 is ImagePickerContract.Effect.NavigateToEditor -> {
-                    val index = galleryState.images.indexOfFirst { it.id == effect.image.id }
-                        .coerceAtLeast(0)
+                    val tappedImage = effect.image
+                    val selected = galleryState.selectedImages
+                    val index = selected.indexOfFirst { it.id == tappedImage.id }.coerceAtLeast(0)
                     editorDestination = EditorDestination(
                         entryId = effect.entryId,
-                        imageId = effect.image.id,
-                        originalUri = effect.image.uri,
+                        imageId = tappedImage.id,
+                        originalUri = tappedImage.uri,
                         initialIndex = index,
+                        tappedImage = tappedImage,
                     )
                 }
             }
@@ -157,6 +160,7 @@ internal fun ImagePickerScreen(
                 GalleryScreen(
                     modifier = modifier,
                     state = galleryState,
+                    pagingFlow = galleryViewModel.pagingFlow,
                     snackbarHostState = snackbarHostState,
                     onIntent = galleryViewModel::handleIntent,
                     onOpenEditor = { image ->
@@ -168,14 +172,30 @@ internal fun ImagePickerScreen(
             saveableStateHolder.SaveableStateProvider(
                 key = "$EDITOR_SCREEN_KEY-${editorDestination!!.entryId}"
             ) {
+                val destination = editorDestination!!
+                val selected = galleryState.selectedImages
+                // 탭한 이미지가 선택 목록에 없으면 맨 앞에 추가하여 단독 표시
+                val allImages: List<GalleryImage> = when {
+                    selected.any { it.id == destination.imageId } -> selected
+                    destination.tappedImage != null -> listOf(destination.tappedImage) + selected
+                    selected.isNotEmpty() -> selected
+                    else -> listOf(
+                        GalleryImage(
+                            id = destination.imageId,
+                            uri = destination.originalUri,
+                            displayName = "", dateTaken = 0L,
+                            albumId = "", albumName = "", width = 0, height = 0, mimeType = "",
+                        )
+                    )
+                }
                 EditorRoute(
-                    destination = editorDestination!!,
-                    allImages = galleryState.images,
-                    selectedImages = galleryState.selectedImages,
+                    destination = destination,
+                    allImages = allImages,
+                    selectedImages = selected,
                     snackbarHostState = snackbarHostState,
                     onEditApplied = { pickedImage ->
                         galleryViewModel.handleIntent(GalleryContract.Intent.OnEditResult(pickedImage))
-                        editorDestination = null  // 편집 완료 → 갤러리로 복귀
+                        editorDestination = null
                     },
                     onDismiss = { editorDestination = null },
                     onToggleSelection = { image ->

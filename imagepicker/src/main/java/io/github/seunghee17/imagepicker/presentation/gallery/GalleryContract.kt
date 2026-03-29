@@ -10,13 +10,10 @@ internal interface GalleryContract {
     data class State(
         val albums: List<GalleryAlbum> = emptyList(),
         val selectedAlbum: GalleryAlbum? = null,
-        val images: List<GalleryImage> = emptyList(),
         val selectedImages: List<GalleryImage> = emptyList(),
-        val isLoadingImages: Boolean = false,
         val maxSelectionCount: Int = 10,
         val showAlbumSelector: Boolean = true,
-        val error: String? = null,
-        val editResults: Map<Long, PickedImage> = emptyMap()
+        val editResults: Map<Long, PickedImage> = emptyMap(),
     ) {
         val isSelectionLimitReached: Boolean
             get() = selectedImages.size >= maxSelectionCount
