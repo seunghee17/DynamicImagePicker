@@ -31,11 +31,11 @@ internal fun TopBarWithCount(
     TopAppBar(
         modifier = modifier,
         title = {
-            Text(text = if (selectedCount > 0) "$selectedCount / $maxCount" else "사진 선택")
+            Text(text = if (selectedCount > 0) "$selectedCount / $maxCount" else "Select Photo")
         },
         navigationIcon = {
             TextButton(onClick = onCancel) {
-                Text("취소")
+                Text("Cancel")
             }
         },
         actions = {
@@ -43,7 +43,7 @@ internal fun TopBarWithCount(
                 onClick = onConfirm,
                 enabled = selectedCount > 0
             ) {
-                Text("완료")
+                Text("Ok")
             }
             if (showAlbumSelector) {
                 AlbumDropdown(

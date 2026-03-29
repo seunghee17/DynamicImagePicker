@@ -102,12 +102,12 @@ internal fun EditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (isCropping) "크롭 영역 선택" else "편집") },
+                title = { Text(if (isCropping) "Select crop area" else "Edit") },
                 navigationIcon = {
                     TextButton(onClick = {
                         if (isCropping) activeOnIntent.value?.invoke(EditorContract.Intent.ExitCropMode)
                         else onDismiss()
-                    }) { Text("취소") }
+                    }) { Text("Cancel") }
                 },
                 actions = {
                     TextButton(
@@ -116,7 +116,7 @@ internal fun EditorScreen(
                             else activeOnIntent.value?.invoke(EditorContract.Intent.SaveAndReturn)
                         },
                         enabled = currentState?.isSaving != true,
-                    ) { Text("완료") }
+                    ) { Text("Ok") }
                 }
             )
         }
@@ -163,12 +163,12 @@ internal fun EditorScreen(
                         OutlinedButton(
                             onClick = { activeOnIntent.value?.invoke(EditorContract.Intent.RotateClockwise) },
                             enabled = currentState?.isSaving != true,
-                        ) { Text("회전") }
+                        ) { Text("Rotate") }
                         Spacer(modifier = Modifier.width(16.dp))
                         OutlinedButton(
                             onClick = { activeOnIntent.value?.invoke(EditorContract.Intent.EnterCropMode) },
                             enabled = currentState?.isSaving != true,
-                        ) { Text("크롭") }
+                        ) { Text("Crop") }
                     }
                 }
             }
@@ -275,7 +275,7 @@ private fun ImageWithCropOverlay(
         Image(
             modifier = Modifier.fillMaxSize(),
             painter = painter,
-            contentDescription = "미리보기",
+            contentDescription = "Preview",
             contentScale = ContentScale.Fit,
         )
 

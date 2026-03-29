@@ -39,12 +39,12 @@ internal fun AlbumDropdown(
         ) {
             Row {
                 Text(
-                    text = selectedAlbum?.name ?: "전체",
+                    text = selectedAlbum?.name ?: "All",
                     color = Color.Black
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "드롭다운",
+                    contentDescription = "Dropdown",
                     tint = Color.Black
                 )
             }
