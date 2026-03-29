@@ -47,12 +47,10 @@ internal interface EditorContract {
         data object ApplyCrop : Intent
         data object ExitCropMode : Intent
         data object SaveAndReturn : Intent
-        data object Cancel : Intent
     }
 
     sealed interface Effect {
         data class ReturnEditedImage(val pickedImage: PickedImage) : Effect
-        data object Cancelled : Effect
         data class ShowError(val message: String) : Effect
     }
 }

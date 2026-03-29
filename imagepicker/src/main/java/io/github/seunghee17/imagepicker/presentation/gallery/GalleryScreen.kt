@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,37 +36,27 @@ import io.github.seunghee17.imagepicker.presentation.utils.gridItemKeyAtPosition
 import io.github.seunghee17.imagepicker.presentation.utils.photoGridDragHandler
 import io.github.seunghee17.imagepicker.PickerResult
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 
 /// 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
 
 @Composable
 internal fun GalleryScreen(
     state: GalleryContract.State,
-    effect: Flow<GalleryContract.Effect>,
+    snackbarHostState: SnackbarHostState,
     onIntent: (GalleryContract.Intent) -> Unit,
     onOpenEditor: (GalleryImage) -> Unit,
-    onConfirm: (PickerResult) -> Unit,
-    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
     val gridState = rememberLazyGridState()
     val autoScrollSpeed = remember { mutableFloatStateOf(0f) }
     val currentDragOffset = remember { mutableStateOf<Offset?>(null) }
     val currentState by rememberUpdatedState(state)
     var dropDownExpanded by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(effect) {
-        effect.collect { galleryEffect ->
-            when (galleryEffect) {
-                is GalleryContract.Effect.ShowSelectionLimitSnackbar ->
-                    snackbarHostState.showSnackbar(galleryEffect.message)
-                is GalleryContract.Effect.SelectionConfirmed -> onConfirm(galleryEffect.result)
-                GalleryContract.Effect.Cancelled -> onCancel()
-            }
-        }
+    // 화면이 컴포지션을 떠날 때(에디터 진입 등) 잔여 스낵바 제거
+    DisposableEffect(Unit) {
+        onDispose { snackbarHostState.currentSnackbarData?.dismiss() }
     }
 
     // 이미지 로드 실패 시 토스트 표시

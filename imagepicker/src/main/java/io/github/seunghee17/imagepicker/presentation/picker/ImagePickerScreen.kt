@@ -3,12 +3,14 @@ package io.github.seunghee17.imagepicker.presentation.picker
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -37,6 +39,7 @@ internal fun ImagePickerScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val viewModel: ImagePickerViewModel = viewModel(
         factory = ImagePickerViewModelFactory()
@@ -85,6 +88,19 @@ internal fun ImagePickerScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(Unit) {
+        galleryViewModel.effect.collectLatest { galleryEffect ->
+            when (galleryEffect) {
+                is GalleryContract.Effect.ShowSelectionLimitSnackbar ->
+                    snackbarHostState.showSnackbar(galleryEffect.message)
+                is GalleryContract.Effect.SelectionConfirmed ->
+                    viewModel.handleIntent(ImagePickerContract.Intent.ConfirmSelection(galleryEffect.result))
+                GalleryContract.Effect.Cancelled ->
+                    viewModel.handleIntent(ImagePickerContract.Intent.Cancel)
+            }
+        }
+    }
+
     // 권한 허용(전체 또는 부분) 시 갤러리 초기화
     LaunchedEffect(state.permissionStatus) {
         if (state.permissionStatus == PermissionStatus.GRANTED ||
@@ -119,10 +135,13 @@ internal fun ImagePickerScreen(
                 is ImagePickerContract.Effect.ShowToast ->
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 is ImagePickerContract.Effect.NavigateToEditor -> {
+                    val index = galleryState.images.indexOfFirst { it.id == effect.image.id }
+                        .coerceAtLeast(0)
                     editorDestination = EditorDestination(
                         entryId = effect.entryId,
                         imageId = effect.image.id,
-                        originalUri = effect.image.uri
+                        originalUri = effect.image.uri,
+                        initialIndex = index,
                     )
                 }
             }
@@ -138,17 +157,11 @@ internal fun ImagePickerScreen(
                 GalleryScreen(
                     modifier = modifier,
                     state = galleryState,
-                    effect = galleryViewModel.effect,
+                    snackbarHostState = snackbarHostState,
                     onIntent = galleryViewModel::handleIntent,
                     onOpenEditor = { image ->
                         viewModel.handleIntent(ImagePickerContract.Intent.OpenEditor(image = image))
                     },
-                    onConfirm = { result ->
-                        viewModel.handleIntent(ImagePickerContract.Intent.ConfirmSelection(result))
-                    },
-                    onCancel = {
-                        viewModel.handleIntent(ImagePickerContract.Intent.Cancel)
-                    }
                 )
             }
         } else {
@@ -157,11 +170,17 @@ internal fun ImagePickerScreen(
             ) {
                 EditorRoute(
                     destination = editorDestination!!,
+                    allImages = galleryState.images,
+                    selectedImages = galleryState.selectedImages,
+                    snackbarHostState = snackbarHostState,
                     onEditApplied = { pickedImage ->
                         galleryViewModel.handleIntent(GalleryContract.Intent.OnEditResult(pickedImage))
-                        editorDestination = null
+                        editorDestination = null  // 편집 완료 → 갤러리로 복귀
                     },
                     onDismiss = { editorDestination = null },
+                    onToggleSelection = { image ->
+                        galleryViewModel.handleIntent(GalleryContract.Intent.ToggleImageSelection(image))
+                    },
                     onError = onError,
                     modifier = modifier,
                     allowEditing = config.allowEditing,

@@ -1,28 +1,21 @@
 package io.github.seunghee17.imagepicker.presentation.picker
 
 import android.net.Uri
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.seunghee17.imagepicker.PickedImage
-import io.github.seunghee17.imagepicker.presentation.editor.EditorContract
+import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.presentation.editor.EditorScreen
-import io.github.seunghee17.imagepicker.presentation.editor.EditorViewModel
-import io.github.seunghee17.imagepicker.presentation.editor.EditorViewModelFactory
-import kotlinx.coroutines.flow.collectLatest
 
 internal data class EditorDestination(
     val entryId: Long,
     val imageId: Long,
-    val originalUri: Uri
+    val originalUri: Uri,
+    val initialIndex: Int = 0,
 )
 
 internal fun editorDestinationSaver(): Saver<EditorDestination?, Any> = Saver(
@@ -31,7 +24,8 @@ internal fun editorDestinationSaver(): Saver<EditorDestination?, Any> = Saver(
             listOf(
                 it.entryId.toString(),
                 it.imageId.toString(),
-                it.originalUri.toString()
+                it.originalUri.toString(),
+                it.initialIndex.toString(),
             )
         }
     },
@@ -41,7 +35,8 @@ internal fun editorDestinationSaver(): Saver<EditorDestination?, Any> = Saver(
         EditorDestination(
             entryId = values[0].toLong(),
             imageId = values[1].toLong(),
-            originalUri = Uri.parse(values[2])
+            originalUri = Uri.parse(values[2]),
+            initialIndex = values.getOrNull(3)?.toIntOrNull() ?: 0,
         )
     }
 )
@@ -49,41 +44,35 @@ internal fun editorDestinationSaver(): Saver<EditorDestination?, Any> = Saver(
 @Composable
 internal fun EditorRoute(
     destination: EditorDestination,
+    allImages: List<GalleryImage>,
+    selectedImages: List<GalleryImage>,
+    snackbarHostState: SnackbarHostState,
     onEditApplied: (PickedImage) -> Unit,
     onDismiss: () -> Unit,
+    onToggleSelection: (GalleryImage) -> Unit,
     onError: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     allowEditing: Boolean = true,
 ) {
-    val context = LocalContext.current
-    val viewModel: EditorViewModel = viewModel(
-        key = "editor-${destination.entryId}",
-        factory = EditorViewModelFactory(
-            originalUri = destination.originalUri,
-            context = context
-        )
-    )
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    LaunchedEffect(viewModel) {
-        viewModel.effect.collectLatest { effect ->
-            when (effect) {
-                is EditorContract.Effect.ReturnEditedImage -> onEditApplied(effect.pickedImage)
-                EditorContract.Effect.Cancelled -> onDismiss()
-                is EditorContract.Effect.ShowError -> {
-                    Log.d("TTAG", "에러 ${effect.message}")
-                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
-                    onError(effect.message)
-                }
-            }
-        }
-    }
-
     BackHandler { onDismiss() }
 
+    val initialPage = destination.initialIndex
+        .coerceIn(0, (allImages.size - 1).coerceAtLeast(0))
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { allImages.size },
+    )
+
     EditorScreen(
-        state = state,
-        onIntent = viewModel::handleIntent,
+        pagerState = pagerState,
+        allImages = allImages,
+        selectedImages = selectedImages,
+        entryId = destination.entryId,
+        snackbarHostState = snackbarHostState,
+        onEditApplied = onEditApplied,
+        onDismiss = onDismiss,
+        onToggleSelection = onToggleSelection,
+        onError = onError,
         modifier = modifier,
         allowEditing = allowEditing,
     )
