@@ -17,17 +17,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.presentation.component.TopBarWithCount
+import io.github.seunghee17.imagepicker.presentation.utils.gridItemKeyAtPosition
 import io.github.seunghee17.imagepicker.presentation.utils.photoGridDragHandler
 import io.github.seunghee17.imagepicker.PickerResult
 import kotlinx.coroutines.delay
@@ -49,7 +53,9 @@ internal fun GalleryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val gridState = rememberLazyGridState()
     val autoScrollSpeed = remember { mutableFloatStateOf(0f) }
-    var dropDownExpanded by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    val currentDragOffset = remember { mutableStateOf<Offset?>(null) }
+    val currentState by rememberUpdatedState(state)
+    var dropDownExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(effect) {
         effect.collect { galleryEffect ->
@@ -68,10 +74,22 @@ internal fun GalleryScreen(
     }
 
     // 드래그 중 autoScrollSpeed 값에 따라 그리드를 자동 스크롤
+    // 스크롤 후 현재 손가락 위치의 아이템을 체크하여 선택
     LaunchedEffect(gridState) {
         while (true) {
             val speed = autoScrollSpeed.floatValue
-            if (speed != 0f) gridState.scrollBy(speed)
+            if (speed != 0f) {
+                gridState.scrollBy(speed)
+                currentDragOffset.value?.let { offset ->
+                    gridState.gridItemKeyAtPosition(offset)?.let { key ->
+                        if (currentState.selectedImages.none { it.id == key }) {
+                            currentState.images.firstOrNull { it.id == key }?.let { image ->
+                                onIntent(GalleryContract.Intent.ToggleImageSelection(image))
+                            }
+                        }
+                    }
+                }
+            }
             delay(16L) // ~60fps
         }
     }
@@ -123,7 +141,8 @@ internal fun GalleryScreen(
                             }
                         },
                         autoScrollSpeed = autoScrollSpeed,
-                        autoScrollThreshold = with(LocalDensity.current) { 40.dp.toPx() }
+                        autoScrollThreshold = with(LocalDensity.current) { 40.dp.toPx() },
+                        currentDragOffset = currentDragOffset
                     )
             ) {
                 items(state.images, key = { it.id }) { image ->

@@ -30,7 +30,8 @@ internal fun Modifier.photoGridDragHandler(
     selectedImages: List<GalleryImage>,
     onSelect: (Long) -> Unit, // viewmodel에 정의한 사진 선택 콜백 주입하도록 수정
     autoScrollSpeed: MutableState<Float>,
-    autoScrollThreshold: Float
+    autoScrollThreshold: Float,
+    currentDragOffset: MutableState<Offset?> // 자동 스크롤 중 아이템 선택을 위해 현재 드래그 좌표 노출
 ): Modifier = composed {
     val currentSelectedImages by rememberUpdatedState(selectedImages)
     val currentOnSelect by rememberUpdatedState(onSelect)
@@ -48,19 +49,23 @@ internal fun Modifier.photoGridDragHandler(
                         initialKey = key
                         currentKey = key
                         currentOnSelect(key)
+                        currentDragOffset.value = offset
                     }
                 }
             },
             onDragCancel = {
                 initialKey = null
                 autoScrollSpeed.value = 0f
+                currentDragOffset.value = null
             },
             onDragEnd = {
                 initialKey = null
                 autoScrollSpeed.value = 0f
+                currentDragOffset.value = null
             },
             onDrag = { change, _ ->
                 if (initialKey != null) {
+                    currentDragOffset.value = change.position
                     val distFromBottom =
                         lazyGridState.layoutInfo.viewportSize.height - change.position.y
                     val distFromTop = change.position.y
