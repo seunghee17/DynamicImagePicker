@@ -17,6 +17,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -45,6 +47,16 @@ internal fun GalleryGridItem(
     modifier: Modifier = Modifier
 ) {
     val isSelected = selectionOrder != null
+    val currentOnOpenEditor by rememberUpdatedState(onOpenEditor)
+    val currentOnSelectionBadgeTap by rememberUpdatedState(onSelectionBadgeTap)
+
+    val handleTap: () -> Unit = {
+        if (image.mediaType == MediaType.VIDEO) {
+            currentOnSelectionBadgeTap()
+        } else {
+            currentOnOpenEditor()
+        }
+    }
 
     Box(
         modifier = modifier
@@ -53,15 +65,8 @@ internal fun GalleryGridItem(
                 if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary)
                 else Modifier
             )
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    // Videos toggle selection on tap; images open editor
-                    if (image.mediaType == MediaType.VIDEO) {
-                        onSelectionBadgeTap()
-                    } else {
-                        onOpenEditor()
-                    }
-                })
+            .pointerInput(image.mediaType) {
+                detectTapGestures(onTap = { handleTap() })
             }
     ) {
         AsyncImage(
@@ -117,14 +122,7 @@ internal fun GalleryGridItem(
                 .align(Alignment.TopEnd)
                 .padding(4.dp),
             order = selectionOrder,
-            onTap = {
-                // Videos toggle selection on tap; images open editor
-                if (image.mediaType == MediaType.VIDEO) {
-                    onSelectionBadgeTap()
-                } else {
-                    onOpenEditor()
-                }
-            },
+            onTap = { handleTap() },
         )
     }
 }

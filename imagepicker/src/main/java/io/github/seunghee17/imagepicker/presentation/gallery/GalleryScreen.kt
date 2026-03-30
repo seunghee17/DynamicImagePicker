@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -90,22 +91,22 @@ internal fun GalleryScreen(
 
     // 드래그 중 autoScrollSpeed 값에 따라 그리드를 자동 스크롤
     LaunchedEffect(gridState) {
-        while (true) {
-            val speed = autoScrollSpeed.floatValue
-            if (speed != 0f) {
-                gridState.scrollBy(speed)
-                currentDragOffset.value?.let { offset ->
-                    gridState.gridItemKeyAtPosition(offset)?.let { key ->
-                        if (currentState.selectedImages.none { it.id == key }) {
-                            currentItemsById[key]?.let { image ->
-                                onIntent(GalleryContract.Intent.ToggleImageSelection(image))
+        snapshotFlow { autoScrollSpeed.floatValue }
+            .collect { _ ->
+                while (autoScrollSpeed.floatValue != 0f) {
+                    gridState.scrollBy(autoScrollSpeed.floatValue)
+                    currentDragOffset.value?.let { offset ->
+                        gridState.gridItemKeyAtPosition(offset)?.let { key ->
+                            if (currentState.selectedImages.none { it.id == key }) {
+                                currentItemsById[key]?.let { image ->
+                                    onIntent(GalleryContract.Intent.ToggleImageSelection(image))
+                                }
                             }
                         }
                     }
+                    delay(16L) // ~60fps
                 }
             }
-            delay(16L) // ~60fps
-        }
     }
 
     Scaffold(
@@ -179,9 +180,7 @@ internal fun GalleryScreen(
                         key = pagingItems.itemKey { it.id },
                     ) { index ->
                         val image = pagingItems[index] ?: return@items
-                        val selectedIndex =
-                            state.selectedImages.indexOfFirst { it.id == image.id }
-                        val order = selectedIndex.takeIf { it >= 0 }?.let { it + 1 }
+                        val order = state.selectionOrderMap[image.id]
 
                         GalleryGridItem(
                             image = image,
