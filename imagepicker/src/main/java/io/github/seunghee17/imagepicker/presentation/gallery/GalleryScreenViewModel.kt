@@ -106,11 +106,9 @@ internal class GalleryScreenViewModel(
 
     private fun toggleSelection(image: GalleryImage) {
         val current = _state.value
-        val selected = current.selectedImages.toMutableList()
 
-        if (selected.any { it.id == image.id }) {
-            selected.removeAll { it.id == image.id }
-            _state.update { it.copy(selectedImages = selected) }
+        if (current.selectedImages.any { it.id == image.id }) {
+            _state.update { it.copy(selectedImages = it.selectedImages.filter { img -> img.id != image.id }) }
             return
         }
 
@@ -125,8 +123,7 @@ internal class GalleryScreenViewModel(
             return
         }
 
-        selected.add(image)
-        _state.update { it.copy(selectedImages = selected) }
+        _state.update { it.copy(selectedImages = it.selectedImages + image) }
     }
 
     private fun applyEditResult(pickedImage: PickedImage) {
@@ -171,5 +168,10 @@ internal class GalleryScreenViewModel(
                 editResults = emptyMap(),
             )
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        _effect.close()
     }
 }
