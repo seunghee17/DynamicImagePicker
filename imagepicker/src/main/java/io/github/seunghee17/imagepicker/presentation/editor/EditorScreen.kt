@@ -37,12 +37,14 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
+import io.github.seunghee17.imagepicker.R
 import io.github.seunghee17.imagepicker.PickedImage
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.presentation.component.SelectionBadge
@@ -102,12 +104,12 @@ internal fun EditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (isCropping) "Select crop area" else "Edit") },
+                title = { Text(if (isCropping) stringResource(R.string.select_crop_area) else stringResource(R.string.edit)) },
                 navigationIcon = {
                     TextButton(onClick = {
                         if (isCropping) activeOnIntent.value?.invoke(EditorContract.Intent.ExitCropMode)
                         else onDismiss()
-                    }) { Text("Cancel") }
+                    }) { Text(stringResource(R.string.cancel)) }
                 },
                 actions = {
                     TextButton(
@@ -116,7 +118,7 @@ internal fun EditorScreen(
                             else activeOnIntent.value?.invoke(EditorContract.Intent.SaveAndReturn)
                         },
                         enabled = currentState?.isSaving != true,
-                    ) { Text("Ok") }
+                    ) { Text(stringResource(R.string.done)) }
                 }
             )
         }
@@ -163,12 +165,12 @@ internal fun EditorScreen(
                         OutlinedButton(
                             onClick = { activeOnIntent.value?.invoke(EditorContract.Intent.RotateClockwise) },
                             enabled = currentState?.isSaving != true,
-                        ) { Text("Rotate") }
+                        ) { Text(stringResource(R.string.rotate)) }
                         Spacer(modifier = Modifier.width(16.dp))
                         OutlinedButton(
                             onClick = { activeOnIntent.value?.invoke(EditorContract.Intent.EnterCropMode) },
                             enabled = currentState?.isSaving != true,
-                        ) { Text("Crop") }
+                        ) { Text(stringResource(R.string.crop)) }
                     }
                 }
             }

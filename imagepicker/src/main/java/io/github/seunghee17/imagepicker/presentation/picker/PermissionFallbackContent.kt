@@ -10,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.seunghee17.imagepicker.R
 import io.github.seunghee17.imagepicker.domain.model.PermissionStatus
 
 @Composable
@@ -19,21 +21,18 @@ internal fun PermissionFallbackContent(
     state: ImagePickerContract.State,
     onIntent: (ImagePickerContract.Intent) -> Unit,
 ) {
-    val message = when (state.permissionStatus) {
-        PermissionStatus.PARTIALLY_GRANTED ->
-            "전체 갤러리를 표시하려면 전체 사진 접근 권한이 필요합니다."
-        PermissionStatus.PERMANENTLY_DENIED ->
-            "권한이 영구적으로 거부되었습니다. 앱 설정에서 사진 권한을 허용해 주세요."
-        PermissionStatus.DENIED ->
-            "갤러리를 불러오려면 사진 접근 권한이 필요합니다."
-        PermissionStatus.GRANTED -> ""
+    val messageRes = when (state.permissionStatus) {
+        PermissionStatus.PARTIALLY_GRANTED -> R.string.permission_partially_granted
+        PermissionStatus.PERMANENTLY_DENIED -> R.string.permission_permanently_denied
+        PermissionStatus.DENIED -> R.string.permission_denied
+        PermissionStatus.GRANTED -> R.string.app_name
     }
 
-    val buttonLabel = when (state.permissionStatus) {
-        PermissionStatus.PERMANENTLY_DENIED -> "앱 설정 열기"
-        PermissionStatus.PARTIALLY_GRANTED -> "전체 권한 요청"
-        PermissionStatus.DENIED -> "권한 요청"
-        PermissionStatus.GRANTED -> ""
+    val buttonLabelRes = when (state.permissionStatus) {
+        PermissionStatus.PERMANENTLY_DENIED -> R.string.open_settings
+        PermissionStatus.PARTIALLY_GRANTED -> R.string.request_full_permission
+        PermissionStatus.DENIED -> R.string.request_permission
+        PermissionStatus.GRANTED -> R.string.app_name
     }
 
     Column(
@@ -44,7 +43,7 @@ internal fun PermissionFallbackContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = message,
+            text = stringResource(messageRes),
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -58,7 +57,7 @@ internal fun PermissionFallbackContent(
             },
             modifier = Modifier.padding(top = 16.dp)
         ) {
-            Text(buttonLabel)
+            Text(stringResource(buttonLabelRes))
         }
     }
 }
