@@ -31,7 +31,8 @@ import io.github.seunghee17.imagepicker.presentation.component.SelectionBadge
 
 /**
  * Single grid item rendering an image or video thumbnail.
- * - Tap: opens editor (images) or toggles selection (videos)
+ * - Image tap: opens editor
+ * - Video tap: toggles selection
  * - Badge tap: toggles selection
  * - Video items show a play icon + duration overlay at the bottom-start
  */
@@ -53,7 +54,14 @@ internal fun GalleryGridItem(
                 else Modifier
             )
             .pointerInput(Unit) {
-                detectTapGestures(onTap = { onOpenEditor() })
+                detectTapGestures(onTap = {
+                    // Videos toggle selection on tap; images open editor
+                    if (image.mediaType == MediaType.VIDEO) {
+                        onSelectionBadgeTap()
+                    } else {
+                        onOpenEditor()
+                    }
+                })
             }
     ) {
         AsyncImage(
@@ -109,7 +117,14 @@ internal fun GalleryGridItem(
                 .align(Alignment.TopEnd)
                 .padding(4.dp),
             order = selectionOrder,
-            onTap = onSelectionBadgeTap,
+            onTap = {
+                // Videos toggle selection on tap; images open editor
+                if (image.mediaType == MediaType.VIDEO) {
+                    onSelectionBadgeTap()
+                } else {
+                    onOpenEditor()
+                }
+            },
         )
     }
 }

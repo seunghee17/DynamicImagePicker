@@ -11,66 +11,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Queries device gallery images (and optionally videos) via MediaStore ContentResolver.
+ * Queries device gallery items (images and/or videos) via MediaStore ContentResolver.
+ * Image/video queries are delegated to GalleryImagePagingSource for pagination support.
+ * This class handles album queries which return all media types matching the allowVideo filter.
  */
 internal class MediaStoreDataSource(
     private val contentResolver: ContentResolver
 ) {
-    private val imageCollection: Uri
-        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
-
-    suspend fun queryImages(albumId: String? = null): List<GalleryImage> =
-        withContext(Dispatchers.IO) {
-            val projection = arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.DISPLAY_NAME,
-                MediaStore.Images.Media.DATE_TAKEN,
-                MediaStore.Images.Media.BUCKET_ID,
-                MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-                MediaStore.Images.Media.WIDTH,
-                MediaStore.Images.Media.HEIGHT,
-                MediaStore.Images.Media.MIME_TYPE
-            )
-
-            val selection = albumId?.let { "${MediaStore.Images.Media.BUCKET_ID} = ?" }
-            val selectionArgs = albumId?.let { arrayOf(it) }
-            val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
-
-            val images = mutableListOf<GalleryImage>()
-            contentResolver.query(
-                imageCollection, projection, selection, selectionArgs, sortOrder
-            )?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
-                val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
-                val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-                val widthCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.WIDTH)
-                val heightCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.HEIGHT)
-                val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
-
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idCol)
-                    val uri = ContentUris.withAppendedId(imageCollection, id)
-                    images += GalleryImage(
-                        id = id,
-                        uri = uri,
-                        displayName = cursor.getString(nameCol) ?: "",
-                        dateTaken = cursor.getLong(dateCol),
-                        albumId = cursor.getString(bucketIdCol) ?: "",
-                        albumName = cursor.getString(bucketNameCol) ?: "",
-                        width = cursor.getInt(widthCol),
-                        height = cursor.getInt(heightCol),
-                        mimeType = cursor.getString(mimeCol) ?: ""
-                    )
-                }
-            }
-            images
-        }
 
     suspend fun queryAlbums(allowVideo: Boolean = false): List<GalleryAlbum> =
         withContext(Dispatchers.IO) {
