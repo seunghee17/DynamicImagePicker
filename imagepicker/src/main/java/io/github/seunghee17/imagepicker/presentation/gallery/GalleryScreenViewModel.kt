@@ -118,7 +118,7 @@ internal class GalleryScreenViewModel(
             viewModelScope.launch {
                 _effect.send(
                     GalleryContract.Effect.ShowSelectionLimitSnackbar(
-                        "이미지는 최대 ${current.maxSelectionCount}장까지 선택할 수 있습니다."
+                        "최대 ${current.maxSelectionCount}개까지 선택할 수 있습니다."
                     )
                 )
             }

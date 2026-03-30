@@ -25,6 +25,7 @@ internal class GalleryScreenViewModelFactory(
         val galleryRepository = GalleryRepositoryImpl(
             dataSource = MediaStoreDataSource(appContext.contentResolver),
             contentResolver = appContext.contentResolver,
+            allowVideo = config.allowVideo,
         )
         val imageEditRepository = ImageEditRepositoryImpl(ImageFileDataSource(appContext))
         return GalleryScreenViewModel(

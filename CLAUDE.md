@@ -1,335 +1,353 @@
-# 프로젝트 목적
-본 프로젝트는 Compose를 이용해서 Android에서 사용할 수 있는 이미지 피커 라이브러리를 구현한다. 
-v1 에서 구현할 기능으로 이미지 선택의 핵심 흐름에 집중한다.
+# Project Purpose
+This project implements an image picker library for Android using Jetpack Compose.
+v1 focuses on the core image selection flow.
 
-### 개발 목표
-- 제 앱에서 재사용 가능한 Image Picker 컴포넌트 구현
-- Compose 기반 UI 및 상태 관리 구조 설계
-- 이미지 선택과 편집의 최소 기능을 안정적으로 제공
-- 비디오 지원 등 확장 가능한 구조 확보
+### Development Goals
+- Implement a reusable Image Picker component for use across apps
+- Design a Compose-based UI and state management architecture
+- Provide minimal but stable image selection and editing features
+- Establish an extensible structure for future support (e.g., video)
 
-## v1 기능 범위
-### 포함 기능
+## v1 Feature Scope
+### Included Features
 
-1. 이미지 접근 권한 요청
-2. 기기 갤러리 이미지 목록 조회
-3. 이미지 최대 10장 선택 제한
-4. 선택 이미지 편집
-    - 90도 단위 회전
-    - 크롭
-5. 드래그 멀티 선택    
-6. 선택 결과 반환
+1. Image access permission request
+2. Device gallery image list retrieval
+3. Maximum 10 image selection limit
+4. Selected image editing
+    - 90-degree rotation
+    - Crop
+5. Drag multi-select
+6. Return selection result
 
-## 3. 핵심 요구사항
+## 3. Core Requirements
 
-## 3.1 권한 처리
+## 3.1 Permission Handling
 
-### 기능 설명
-사용자가 갤러리 이미지를 선택할 수 있도록 기기 저장소 또는 사진 접근 권한을 요청한다.
+### Description
+Request device storage or photo access permission so users can select gallery images.
 
-### 요구사항
+### Requirements
 
-- 최초 진입 시 필요한 권한이 없으면 권한 요청을 수행한다.
-- 권한이 허용된 경우 이미지 목록을 조회한다.
-- 권한이 영구 거부된 경우 설정 화면 이동 유도를 제공한다.
+- If required permissions are missing on first entry, prompt the user.
+- If permission is granted, load the image list.
+- If permission is permanently denied, guide the user to the Settings screen.
 
-### 성공 조건
-- 사용자가 권한을 허용하면 이미지 목록 화면으로 진입할 수 있어야 한다.
----
-
-## 3.2 이미지 목록 조회
-
-### 기능 설명
-기기 갤러리에 저장된 이미지를 조회하여 Grid 형태로 표시한다.
-
-### 요구사항
-- 갤러리 앨범 명으로 접근할 수 있도록 한다.
-- 최신 이미지 순으로 정렬하여 표시한다.
-- 각 이미지는 썸네일 형태로 표시한다.
-- 스크롤 가능한 Grid UI를 제공한다.
-- 이미지 로딩 중에도 UI가 비정상적으로 멈추지 않아야 한다.
-
-### 성공 조건
-- 사용자는 기기 갤러리에 있는 이미지들을 목록 형태로 확인할 수 있어야 한다.
-
----
-## 3.3 이미지 선택
-### 기능 설명
-사용자는 갤러리 목록에서 이미지를 선택할 수 있다.
-
-### 요구사항
-- 이미지는 탭을 통해 선택/해제할 수 있다.
-- 최대 10장까지 선택할 수 있다.
-- 10장 선택 이후 추가 선택 시 제한 안내를 제공한다.
-- 선택된 이미지는 UI상에서 명확하게 구분되어야 한다.
-- 선택된 순서는 grid view의 item에 숫자로 표시된다.
-- 드래그로 멀티 선택이 가능하다.
-- 선택 개수를 화면에서 확인할 수 있어야 한다.
-
-### 성공 조건
-- 사용자는 최대 10장까지 이미지를 선택할 수 있어야 한다.
-- 선택 수 초과 시 시스템이 추가 선택을 막아야 한다.
-
-### 정책
-
-- 최대 선택 개수: 10장
-- 11번째 이미지 선택 시 선택되지 않아야 함
-- 제한 메시지 예시:
-    
-    `이미지는 최대 10장까지 선택할 수 있습니다.`
-    
+### Success Criteria
+- After granting permission, the user must be able to access the image list screen.
 
 ---
 
-## 3.4 이미지 편집
+## 3.2 Image List
 
-### 기능 설명
-사용자는 선택한 이미지에 대해 기본 편집 기능을 수행할 수 있다.
+### Description
+Retrieve images stored in the device gallery and display them in a grid layout.
 
-### 지원 기능
-- 회전
-- 크롭
+### Requirements
+- Allow access by gallery album name.
+- Display images sorted by most recent first.
+- Show each image as a thumbnail.
+- Provide a scrollable grid UI.
+- UI must not freeze during image loading.
 
----
-
-### 3.4.1 회전
-
-### 요구사항
-- 사용자는 이미지를 90도 단위로 회전할 수 있다.
-- 회전은 버튼 탭으로 수행한다.
-- 회전 결과는 즉시 미리보기 화면에 반영되어야 한다.
-
-### 성공 조건
-- 사용자가 회전 버튼을 누를 때마다 이미지가 90도씩 회전해야 한다.
-
-### 제약사항
-- v1에서는 자유 각도 회전을 지원하지 않는다.
-- 회전 방향은 시계 방향 90도로 제한한다.
+### Success Criteria
+- Users must be able to view all gallery images in a list format.
 
 ---
 
-### 3.4.2 크롭
+## 3.3 Image Selection
 
-### 요구사항
+### Description
+Users can select images from the gallery list.
 
-- 사용자는 이미지의 크롭 영역을 지정할 수 있어야 한다.
-- 크롭 영역은 화면에서 시각적으로 확인 가능해야 한다.
-- 크롭 완료 시 지정한 영역만 잘린 결과를 생성해야 한다.
+### Requirements
+- Images can be selected/deselected by tapping.
+- Up to 10 images can be selected.
+- Attempting to select more than 10 images must show a limit warning.
+- Selected images must be visually distinguished in the UI.
+- Selection order is shown as a number on each grid item.
+- Drag multi-select is supported.
+- The current selection count must be visible on screen.
 
-### 성공 조건
-- 사용자가 지정한 영역 기준으로 이미지가 잘려 결과에 반영되어야 한다.
+### Success Criteria
+- Users must be able to select up to 10 images.
+- The system must block selection beyond the limit.
 
-### 제약사항
-- v1에서는 크롭 비율 옵션을 제한적으로 제공한다.
-- 고급 편집(확대/축소 기반 정교한 편집, 다중 비율 프리셋 다수 제공 등)은 제외한다.
+### Policy
+
+- Maximum selection count: 10
+- The 11th selection attempt must be rejected
+- Limit message example:
+
+    `You can select up to 10 images.`
+
 
 ---
 
-## 3.5 결과 반환
+## 3.4 Image Editing
 
-### 기능 설명
+### Description
+Users can perform basic editing on selected images.
 
-사용자는 이미지 선택 및 편집 완료 후 결과를 호출한 화면으로 반환할 수 있어야 한다.
+### Supported Features
+- Rotation
+- Crop
 
-### 요구사항
+---
 
-- 선택 완료 시 선택된 이미지 목록을 반환한다.
-- 편집이 적용된 이미지는 편집 결과 기준으로 반환한다.
-- 원본 URI와 편집 결과 URI를 구분할 수 있어야 한다.
+### 3.4.1 Rotation
 
-### 성공 조건
+### Requirements
+- Users can rotate images in 90-degree increments.
+- Rotation is triggered by a button tap.
+- The rotation result must be reflected immediately in the preview.
 
-- 호출 측에서 선택/편집 결과를 받아 후속 처리를 수행할 수 있어야 한다.
+### Success Criteria
+- Each tap of the rotate button must rotate the image by 90 degrees.
 
-### 반환 데이터 예시
+### Constraints
+- Free-angle rotation is not supported in v1.
+- Rotation direction is limited to clockwise 90 degrees.
 
-```
-dataclassPickerResult(
-valitems:List<PickedImage>
+---
+
+### 3.4.2 Crop
+
+### Requirements
+
+- Users must be able to specify a crop region.
+- The crop region must be visually displayed on screen.
+- Upon crop confirmation, only the selected region should be retained.
+
+### Success Criteria
+- The image must be cropped to the user-specified region and reflected in the result.
+
+### Constraints
+- Crop ratio options are limited in v1.
+- Advanced editing (zoom-based precision editing, multiple ratio presets, etc.) is excluded.
+
+---
+
+## 3.5 Result Return
+
+### Description
+
+After completing selection and editing, the result must be returned to the caller.
+
+### Requirements
+
+- On completion, return the list of selected images.
+- If editing was applied, return the edited result instead of the original.
+- Original URI and edited URI must be distinguishable.
+
+### Success Criteria
+
+- The caller must be able to receive the selection/edit result and perform follow-up processing.
+
+### Return Data Example
+
+```kotlin
+data class PickerResult(
+    val items: List<PickedImage>
 )
 
-dataclassPickedImage(
-valoriginalUri:Uri,
-valeditedUri:Uri?=null,
-valrotationDegrees:Int=0,
-valisCropped:Boolean=false
+data class PickedImage(
+    val originalUri: Uri,
+    val editedUri: Uri? = null,
+    val rotationDegrees: Int = 0,
+    val cropRect: CropRect? = null    // isCropped is determined by cropRect != null
 )
 ```
 
 ---
 
-## 4. 사용자 흐름
+## 4. User Flows
 
-## 4.1 기본 선택 흐름
+## 4.1 Basic Selection Flow
 
-1. 사용자가 Image Picker를 실행한다.
-2. 권한이 없으면 권한 요청 UI를 표시한다.
-3. 권한 허용 후 갤러리 이미지 목록을 조회한다.
-4. 사용자가 이미지를 탭 혹은 드래그하여 선택한다.
-5. 최대 10장까지 선택한다.
-6. 완료 버튼을 눌러 선택 결과를 반환한다.
-
----
-
-## 4.2 편집 흐름
-
-1. 사용자가 선택한 이미지의 체크박스를 제외한 영역을 누르면 편집 화면에서 열린다.
-2. 회전 또는 크롭을 수행한다.
-3. 편집 결과를 저장한다.
-4. 편집 완료 후 선택 결과에 반영한다.
-5. 최종 완료 시 호출 측으로 반환한다.
+1. User launches the Image Picker.
+2. If permissions are missing, display the permission request UI.
+3. After permission is granted, load the gallery image list.
+4. User selects images by tapping or dragging.
+5. Up to 10 images can be selected.
+6. User taps the Done button to return the selection result.
 
 ---
 
-## 5. 화면 단위 요구사항
+## 4.2 Editing Flow
 
-## 5.1 권한 요청 화면
-
-### 표시 요소
-- 설정 이동 버튼(필요 시)
-
-### 상태
-- 최초 요청 전
-- 거부됨
-- 영구 거부됨
+1. Tapping an image (outside its checkbox area) opens the editor screen.
+2. User performs rotation or crop.
+3. Editing result is saved.
+4. The result is reflected in the selection on completion.
+5. On final Done, the result is returned to the caller.
 
 ---
 
-## 5.2 이미지 목록 화면
+## 5. Screen Requirements
 
-### 표시 요소
-- 상단 바
-- 선택 개수 표시
-- 완료 버튼
-- Grid 형태 이미지 썸네일 목록
+## 5.1 Permission Request Screen
 
-### 상태
-- 로딩
-- 데이터 있음
-- 데이터 없음
-- 권한 없음
+### Elements
+- Settings navigation button (when needed)
+
+### States
+- Before first request
+- Denied
+- Permanently denied
 
 ---
 
-## 5.3 편집 화면
+## 5.2 Image List Screen
 
-### 표시 요소
-- 원본/편집 이미지 미리보기
-- 회전 버튼
-- 크롭 버튼
-- 취소 버튼
-- 완료 버튼
+### Elements
+- Top bar
+- Selection count display
+- Done button
+- Scrollable grid of image thumbnails
 
-### 상태
-- 편집 전
-- 회전 적용
-- 크롭 적용
-- 저장 중
-
----
-
-## 6. 예외 처리
-
-### 6.1 권한 거부
-- 권한 거부 시 이미지 목록을 노출하지 않는다.
-- 권한 필요 안내 문구를 표시한다.
-
-### 6.2 이미지 없음
-- 갤러리에 이미지가 없는 경우 빈 상태 UI를 표시한다.
-
-### 6.3 선택 개수 초과
-- 10장 초과 선택 시 추가 선택을 막고 안내 메시지를 표시한다.
-
-### 6.4 편집 실패
-- 크롭 또는 회전 처리 실패 시 오류 메시지를 표시한다.
-- 원본 이미지는 손상되지 않아야 한다.
-
-### 6.5 결과 저장 실패
-- 편집 결과 파일 저장 실패 시 재시도 또는 취소 선택지를 제공한다.
+### States
+- Loading
+- Has data
+- No data
+- No permission
 
 ---
 
-# 프로젝트 구조 및 작업 가이드
+## 5.3 Editor Screen
 
-## 모듈 구성
+### Elements
+- Original/edited image preview
+- Rotate button
+- Crop button
+- Cancel button
+- Done button
 
-프로젝트는 두 모듈로 구성된다.
-
-- **`:app`** — 라이브러리 사용 방식을 보여주는 샘플 앱 (`com.universe.dynamicimagepicker`)
-- **`:imagepicker`** — 실제 라이브러리 구현체 (`com.universe.imagepicker`)
-
-> 기능 구현은 반드시 `:imagepicker` 모듈에서 수행한다. `:app`은 통합 방식만 보여주며 건드리지 않는 것을 원칙으로 한다.
+### States
+- Before editing
+- Rotation applied
+- Crop applied
+- Saving
 
 ---
 
-## 아키텍처 패턴: MVI
+## 6. Error Handling
 
-전체 구조는 **MVI (Model-View-Intent)** 패턴을 따른다.
+### 6.1 Permission Denied
+- Do not show the image list if permission is denied.
+- Display a message explaining that permission is required.
+
+### 6.2 No Images
+- Display an empty state UI if the gallery has no images.
+
+### 6.3 Selection Limit Exceeded
+- Block additional selection and show a warning message when the limit is exceeded.
+
+### 6.4 Edit Failure
+- Display an error message if crop or rotation processing fails.
+- The original image must not be damaged.
+
+### 6.5 Save Failure
+- If saving the edited result fails, provide options to retry or cancel.
+
+---
+
+# Project Structure & Work Guide
+
+## Module Layout
+
+The project consists of two modules:
+
+- **`:app`** — Sample app demonstrating library usage (`com.universe.dynamicimagepicker`)
+- **`:imagepicker`** — The actual library implementation (`com.universe.imagepicker`)
+
+> All feature implementation must be done in `:imagepicker`. `:app` only demonstrates integration and should not be modified.
+
+---
+
+## Architecture Pattern: MVI
+
+The overall structure follows the **MVI (Model-View-Intent)** pattern.
 
 ```
-사용자 액션 → Intent → ViewModel → State 갱신 → Composable 렌더링
+User Action → Intent → ViewModel → State update → Composable render
                                   ↓
-                             Effect (Channel) → 일회성 사이드 이펙트
+                             Effect (Channel) → one-time side effects
 ```
 
-- **State**: UI에 표시할 불변 데이터. ViewModel의 `StateFlow`로 관리한다.
-- **Intent**: 사용자 또는 시스템이 발생시키는 이벤트. sealed class로 정의한다.
-- **Effect**: 화면 이동, 토스트, 권한 요청 등 한 번만 소비되는 이벤트. `Channel`로 관리한다.
+- **State**: Immutable data for the UI. Managed via `StateFlow` in ViewModel.
+- **Intent**: Events triggered by the user or system. Defined as sealed classes.
+- **Effect**: One-time events such as navigation, toasts, or permission requests. Managed via `Channel`.
 
 ---
 
-## 레이어 구성
+## Layer Structure
 
 ```
 presentation/
-  picker/          ← 갤러리 선택 화면 (Screen, State, Intent, Effect, ViewModel, Factory)
-  editor/          ← 이미지 편집 화면 (Screen, State, Intent, Effect, ViewModel, Factory)
-  gallery/         ← Gallery Grid 컴포넌트 (GalleryScreen, GalleryGridItem, AlbumDropdown)
-  component/       ← 재사용 UI 컴포넌트 (TopBarWithCount, SelectionBadge)
-  utils/           ← 드래그 멀티 선택 헬퍼 (photoGridDragHandler modifier)
+  picker/          ← Gallery selection screen (Screen, State, Intent, Effect, ViewModel, Factory)
+  editor/          ← Image editor screen (Screen, State, Intent, Effect, ViewModel, Factory)
+  gallery/         ← Gallery grid components (GalleryScreen, GalleryGridItem, AlbumDropdown)
+  component/       ← Reusable UI components (TopBarWithCount, SelectionBadge)
+  utils/           ← Drag multi-select helper (photoGridDragHandler modifier)
 domain/
-  model/           ← 도메인 모델 (GalleryImage, GalleryAlbum, PickedImage, PickerResult, CropRect, PermissionStatus)
-  repository/      ← Repository 인터페이스 (GalleryRepository, ImageEditRepository)
-  usecase/         ← UseCase (GetGalleryAlbums, GetImagesInAlbum, RotateImage, CropImage, CheckPermission)
+  model/           ← Domain models (GalleryImage, GalleryAlbum, PickedImage, PickerResult, CropRect, PermissionStatus)
+  repository/      ← Repository interfaces (GalleryRepository, ImageEditRepository)
+  usecase/         ← Use cases (GetGalleryAlbums, GetImagesInAlbum, RotateImage, CropImage, CheckPermission)
 data/
-  source/          ← 데이터 소스 (MediaStoreDataSource, ImageFileDataSource)
-  repository/      ← Repository 구현체 (GalleryRepositoryImpl, ImageEditRepositoryImpl)
+  source/          ← Data sources (MediaStoreDataSource, ImageFileDataSource)
+  repository/      ← Repository implementations (GalleryRepositoryImpl, ImageEditRepositoryImpl)
 ```
 
 ---
 
-## 주요 파일 역할
+## Key File Roles
 
-| 파일 | 역할 |
+| File | Role |
 |------|------|
-| `DynamicImagePicker.kt` | 라이브러리 퍼블릭 진입점. `DynamicImagePicker.Content(config, onResult, onCancel)` 제공 |
-| `ImagePickerConfig.kt` | 라이브러리 설정 (`maxSelectionCount`, `showAlbumSelector`, `allowEditing`) |
-| `ImagePickerScreen.kt` | 권한 처리 + 화면 라우팅 (갤러리/권한 거부 화면 분기) |
-| `GalleryScreen.kt` | 3열 Grid, 드래그 멀티 선택, 상단 바, 선택 제한 스낵바 |
-| `GalleryGridItem.kt` | 썸네일 + 선택 오버레이 + SelectionBadge |
-| `ImagePickerViewModel.kt` | 갤러리 선택 전체 상태 관리, 편집 결과 병합, 최종 결과 반환 |
-| `EditorScreen.kt` | 이미지 편집 UI (회전/크롭) |
-| `EditorViewModel.kt` | 편집 상태 관리. 항상 originalUri 기준으로 회전하여 JPEG 화질 손실 방지 |
-| `MediaStoreDataSource.kt` | MediaStore ContentResolver로 이미지/앨범 조회 (API 26-36 호환) |
-| `ImageFileDataSource.kt` | 비트맵 회전·크롭 처리. 캐시: `context.cacheDir/imagepicker_edits/` |
-| `Utils.kt` | `photoGridDragHandler` Modifier — 롱프레스 후 드래그 멀티 선택 구현 |
+| `DynamicImagePicker.kt` | Public entry point of the library. Exposes the top-level `@Composable fun DynamicImagePicker(config, onResult, onCancel, onError, modifier)` |
+| `ImagePickerConfig.kt` | Library configuration (`maxSelectionCount`, `showAlbumSelector`, `allowEditing`) |
+| `ImagePickerScreen.kt` | Permission handling + screen routing (gallery vs. permission denied screen) |
+| `GalleryScreen.kt` | 3-column grid, drag multi-select, top bar, selection limit snackbar |
+| `GalleryGridItem.kt` | Thumbnail + selection overlay + SelectionBadge |
+| `ImagePickerViewModel.kt` | Manages overall gallery selection state, merges edit results, returns final result |
+| `EditorScreen.kt` | Image editing UI (rotation/crop) |
+| `EditorViewModel.kt` | Manages editing state. Always rotates from `originalUri` to prevent JPEG quality degradation |
+| `MediaStoreDataSource.kt` | Queries images/albums via MediaStore ContentResolver (API 26–36 compatible) |
+| `ImageFileDataSource.kt` | Bitmap rotation and crop. Cache: `context.cacheDir/imagepicker_edits/` |
+| `Utils.kt` | `photoGridDragHandler` Modifier — implements long-press + drag multi-select |
 
 ---
 
-## 도메인 모델 요약
+## Usage
+
+The library exposes a single top-level Composable function. Call it directly — there is no wrapper object or `.Content()` method.
 
 ```kotlin
-// 최종 반환 결과
+DynamicImagePicker(
+    config = ImagePickerConfig(),
+    onResult = { result: PickerResult -> /* handle result */ },
+    onCancel = { /* handle cancel */ },
+    onError = { message -> /* handle error */ }
+)
+```
+
+---
+
+## Domain Model Summary
+
+```kotlin
+// Final return result
 data class PickerResult(val items: List<PickedImage>)
 
 data class PickedImage(
     val originalUri: Uri,
-    val editedUri: Uri? = null,       // 편집 없으면 null
+    val editedUri: Uri? = null,       // null if no editing was applied
     val rotationDegrees: Int = 0,
-    val cropRect: CropRect? = null    // isCropped는 cropRect != null 로 판단
+    val cropRect: CropRect? = null    // isCropped is determined by cropRect != null
 )
 
-// 정규화 크롭 좌표 [0f, 1f]
+// Normalized crop coordinates [0f, 1f]
 data class CropRect(val left: Float, val top: Float, val right: Float, val bottom: Float) {
     companion object { val FULL = CropRect(0f, 0f, 1f, 1f) }
 }
@@ -342,45 +360,45 @@ enum class PermissionStatus { GRANTED, PARTIALLY_GRANTED, DENIED, PERMANENTLY_DE
 
 ---
 
-## 작업 시 접근 방법
+## How to Work
 
-### 1. 새 기능 추가
-1. `domain/model/`에 필요한 데이터 모델 추가 또는 기존 모델 수정
-2. 필요한 경우 `domain/repository/` 인터페이스에 메서드 추가
-3. `domain/usecase/`에 UseCase 추가
-4. `data/source/` 및 `data/repository/`에 구현체 반영
-5. 해당 화면의 `*Intent`, `*State`, `*Effect` sealed class에 항목 추가
-6. ViewModel의 `handleIntent()`에 처리 로직 추가
-7. Composable에서 State/Effect 소비
-8. 모든 코드 수정은 공식 문서에 의거한 권장방식으로 접근할 것
+### 1. Adding a New Feature
+1. Add or modify data models in `domain/model/`
+2. If needed, add methods to `domain/repository/` interfaces
+3. Add a UseCase in `domain/usecase/`
+4. Reflect changes in `data/source/` and `data/repository/` implementations
+5. Add entries to the relevant `*Intent`, `*State`, `*Effect` sealed classes
+6. Add handling logic to `handleIntent()` in the ViewModel
+7. Consume State/Effect in the Composable
+8. All code changes must follow the officially recommended approach per the relevant documentation
 
-### 2. UI 수정
-- 재사용 컴포넌트는 `presentation/component/`에 위치
-- 화면별 컴포넌트는 해당 화면 패키지 내에서 관리 (`picker/`, `gallery/`, `editor/`)
-- Compose 상태는 ViewModel의 `StateFlow`를 `collectAsStateWithLifecycle()`로 수집
+### 2. Modifying UI
+- Reusable components live in `presentation/component/`
+- Screen-specific components are managed within their screen package (`picker/`, `gallery/`, `editor/`)
+- Compose state is collected from ViewModel `StateFlow` using `collectAsStateWithLifecycle()`
 
-### 3. 드래그 선택 수정
-- `presentation/utils/Utils.kt`의 `photoGridDragHandler` Modifier 수정
-- 롱프레스 감지 → 드래그 시작 → 아이템 하이트박스 기반 선택 순서로 동작
+### 3. Modifying Drag Selection
+- Modify the `photoGridDragHandler` Modifier in `presentation/utils/Utils.kt`
+- Flow: long-press detection → drag start → item selection based on hit-box
 
-### 4. 편집 기능 수정
-- `EditorViewModel`은 항상 `originalUri`를 기준으로 회전을 적용한다 (JPEG 재압축 누적 방지)
-- 크롭은 현재 `previewUri`를 기준으로 적용
-- 편집 완료 시 `PickedImage(editedUri = ..., rotationDegrees = ..., cropRect = ...)`로 반환
+### 4. Modifying Editing Features
+- `EditorViewModel` always applies rotation from `originalUri` (prevents accumulated JPEG re-compression)
+- Crop is applied based on the current `previewUri`
+- On edit completion, return `PickedImage(editedUri = ..., rotationDegrees = ..., cropRect = ...)`
 
-### 5. 권한 처리 수정
-- 권한 분기 로직: `ImagePickerScreen.kt`
-- 상태 표현: `PermissionStatus` enum
-- Android 14+ 부분 권한(`READ_MEDIA_VISUAL_USER_SELECTED`)은 `PARTIALLY_GRANTED`로 처리
+### 5. Modifying Permission Handling
+- Permission branching logic: `ImagePickerScreen.kt`
+- State representation: `PermissionStatus` enum
+- Android 14+ partial permission (`READ_MEDIA_VISUAL_USER_SELECTED`) is handled as `PARTIALLY_GRANTED`
 
 ---
 
-## 빌드 설정 요약
+## Build Configuration
 
 - **compileSdk / targetSdk**: 36
 - **minSdk**: 26
 - **Kotlin**: 2.0.21
 - **Compose BOM**: 2025.05.00
-- **이미지 로딩**: Coil 2.7.0 (`AsyncImage`)
-- **비동기**: Kotlin Coroutines 1.9.0
+- **Image loading**: Coil 2.7.0 (`AsyncImage`)
+- **Async**: Kotlin Coroutines 1.9.0
 - **ViewModel**: AndroidX Lifecycle 2.9.0

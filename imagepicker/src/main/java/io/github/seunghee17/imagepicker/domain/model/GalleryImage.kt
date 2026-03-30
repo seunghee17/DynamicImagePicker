@@ -6,10 +6,12 @@ internal data class GalleryImage(
     val id: Long,
     val uri: Uri,
     val displayName: String,
-    val dateTaken: Long,        // epoch millis, 최신 순 정렬 기준
+    val dateTaken: Long,
     val albumId: String,
     val albumName: String,
     val width: Int,
     val height: Int,
-    val mimeType: String
+    val mimeType: String,
+    val mediaType: MediaType = MediaType.IMAGE,
+    val videoDuration: Long = 0L,   // milliseconds, only meaningful when mediaType == VIDEO
 )

@@ -161,6 +161,7 @@ dependencies {
 
     // Image loading
     implementation(libs.coil.compose)
+    implementation(libs.coil.video)
 
     // Testing
     testImplementation(libs.junit)

@@ -13,16 +13,21 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.github.seunghee17.imagepicker.domain.model.PermissionStatus
 
-internal fun requestedPermissionsForPicker(): Array<String> = when {
+internal fun requestedPermissionsForPicker(allowVideo: Boolean = false): Array<String> = when {
     Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 ->
+        // READ_EXTERNAL_STORAGE covers both images and videos on API <= 32
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
-        arrayOf(
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-        )
+        buildList {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
+            add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+            if (allowVideo) add(Manifest.permission.READ_MEDIA_VIDEO)
+        }.toTypedArray()
     else ->
-        arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        buildList {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
+            if (allowVideo) add(Manifest.permission.READ_MEDIA_VIDEO)
+        }.toTypedArray()
 }
 
 internal fun resolvePermissionStatus(

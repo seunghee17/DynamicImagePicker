@@ -11,12 +11,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * MediaStore ContentResolver를 통해 기기 갤러리 이미지를 조회한다.
+ * Queries device gallery images (and optionally videos) via MediaStore ContentResolver.
  */
 internal class MediaStoreDataSource(
     private val contentResolver: ContentResolver
 ) {
-    private val collection: Uri
+    private val imageCollection: Uri
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -36,28 +36,26 @@ internal class MediaStoreDataSource(
                 MediaStore.Images.Media.MIME_TYPE
             )
 
-            // 특정 앨범만 필터링
             val selection = albumId?.let { "${MediaStore.Images.Media.BUCKET_ID} = ?" }
             val selectionArgs = albumId?.let { arrayOf(it) }
             val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
 
             val images = mutableListOf<GalleryImage>()
-            // 어떤 테이블 조회 / 어떤 컬럼 / 어떤 조건 / 조건 값 / 정렬 방식
             contentResolver.query(
-                collection, projection, selection, selectionArgs, sortOrder
-            )?.use { cursor -> // 끝나면 자동으로 cursor을 닫아 리소스 누수 방지
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID) // 이미지 고유 id
-                val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME) // 파일 이름
-                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN) // 촬영 시각
-                val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID) // 앨범 id
-                val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME) // 앨범 이름
-                val widthCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.WIDTH) // 이미지 너비
-                val heightCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.HEIGHT) // 이미지 높이
-                val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE) // 이미지 타입
+                imageCollection, projection, selection, selectionArgs, sortOrder
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
+                val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
+                val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                val widthCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.WIDTH)
+                val heightCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.HEIGHT)
+                val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
-                    val uri = ContentUris.withAppendedId(collection, id)
+                    val uri = ContentUris.withAppendedId(imageCollection, id)
                     images += GalleryImage(
                         id = id,
                         uri = uri,
@@ -74,30 +72,37 @@ internal class MediaStoreDataSource(
             images
         }
 
-    suspend fun queryAlbums(): List<GalleryAlbum> =
+    suspend fun queryAlbums(allowVideo: Boolean = false): List<GalleryAlbum> =
         withContext(Dispatchers.IO) {
-            // 앨범 목록만 조회하기 위한 경량 쿼리 (전체 이미지 로드 없이 버킷 정보만 조회)
+            // Use MediaStore.Files for a unified image+video album query.
+            val collection = MediaStore.Files.getContentUri("external")
             val projection = arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.BUCKET_ID,
-                MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
+                MediaStore.Files.FileColumns._ID,
+                BUCKET_ID,
+                BUCKET_DISPLAY_NAME,
             )
-            val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+            val mediaTypeSelection = if (allowVideo) {
+                "${MediaStore.Files.FileColumns.MEDIA_TYPE} IN " +
+                    "(${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}," +
+                    "${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})"
+            } else {
+                "${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}"
+            }
+            val sortOrder = "${MediaStore.MediaColumns.DATE_TAKEN} DESC"
 
-            // 버킷별로 첫 번째 이미지(대표 이미지)와 개수를 수집
-            val coverUriMap = mutableMapOf<String, Uri>()      // albumId → coverUri
-            val albumNameMap = mutableMapOf<String, String>()  // albumId → albumName
-            val albumCountMap = mutableMapOf<String, Int>()    // albumId → count
+            val coverUriMap = mutableMapOf<String, Uri>()
+            val albumNameMap = mutableMapOf<String, String>()
+            val albumCountMap = mutableMapOf<String, Int>()
 
             contentResolver.query(
-                collection, projection, null, null, sortOrder
+                collection, projection, mediaTypeSelection, null, sortOrder
             )?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
-                val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                val bucketIdCol = cursor.getColumnIndexOrThrow(BUCKET_ID)
+                val bucketNameCol = cursor.getColumnIndexOrThrow(BUCKET_DISPLAY_NAME)
 
                 while (cursor.moveToNext()) {
-                    val bucketId = cursor.getString(bucketIdCol) ?: ""
+                    val bucketId = cursor.getString(bucketIdCol) ?: continue
                     albumCountMap[bucketId] = (albumCountMap[bucketId] ?: 0) + 1
                     if (!coverUriMap.containsKey(bucketId)) {
                         val id = cursor.getLong(idCol)
@@ -119,4 +124,9 @@ internal class MediaStoreDataSource(
                     )
                 }
         }
+
+    companion object {
+        private const val BUCKET_ID = "bucket_id"
+        private const val BUCKET_DISPLAY_NAME = "bucket_display_name"
+    }
 }

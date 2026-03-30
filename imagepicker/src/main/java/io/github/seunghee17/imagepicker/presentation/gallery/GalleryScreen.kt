@@ -80,7 +80,7 @@ internal fun GalleryScreen(
         if (refreshState is LoadState.Error) {
             Toast.makeText(
                 context,
-                refreshState.error.message ?: "Fail to load Image",
+                refreshState.error.message ?: "Fail to load Media",
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -147,7 +147,7 @@ internal fun GalleryScreen(
                         .padding(innerPadding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("There is No Image In Gallery")
+                    Text("표시할 이미지가 없습니다.")
                 }
             }
 
