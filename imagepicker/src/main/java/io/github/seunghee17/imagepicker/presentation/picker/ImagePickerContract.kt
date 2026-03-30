@@ -1,11 +1,13 @@
 package io.github.seunghee17.imagepicker.presentation.picker
 
+import androidx.compose.runtime.Stable
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.domain.model.PermissionStatus
 import io.github.seunghee17.imagepicker.PickerResult
 
 internal interface ImagePickerContract {
 
+    @Stable
     data class State(
         val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
         val hasRequestedPermission: Boolean = false

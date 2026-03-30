@@ -1,6 +1,7 @@
 package io.github.seunghee17.imagepicker.presentation.editor
 
 import android.net.Uri
+import androidx.compose.runtime.Stable
 import io.github.seunghee17.imagepicker.CropRect
 import io.github.seunghee17.imagepicker.PickedImage
 
@@ -8,6 +9,7 @@ internal interface EditorContract {
 
     enum class Mode { NORMAL, CROPPING }
 
+    @Stable
     data class State(
         val originalUri: Uri,
 
