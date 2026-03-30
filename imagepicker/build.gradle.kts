@@ -23,9 +23,12 @@ fun resolvePublishProperty(primaryKey: String, fallbackKey: String? = null): Str
 
 val keyId = resolvePublishProperty("signing.keyId")
 val signingPassword = resolvePublishProperty("signing.password")
+val signingKey = resolvePublishProperty("signingKey", "signing.key")
 val secretKeyFile = resolvePublishProperty("signing.secretKeyRingFile")
 val centralUsername = resolvePublishProperty("centralUsername", "ossrhUsername")
 val centralPassword = resolvePublishProperty("centralPassword", "ossrhPassword")
+val libraryGroupId = providers.gradleProperty("GROUP").orNull ?: "io.github.seunghee17"
+val libraryVersionName = providers.gradleProperty("VERSION_NAME").orNull ?: "1.0.0"
 
 android {
     namespace = "io.github.seunghee17.imagepicker"
@@ -71,9 +74,9 @@ android {
 publishing {
     publications {
         create<MavenPublication>("release") {
-            groupId = "io.github.seunghee17"
+            groupId = libraryGroupId
             artifactId = "imagepicker"
-            version = "1.0.0"
+            version = libraryVersionName
 
             afterEvaluate {
                 from(components["release"])
@@ -118,15 +121,24 @@ publishing {
     }
 }
 
-if (keyId != null && signingPassword != null && secretKeyFile != null) {
-    extra.set("signing.keyId", keyId)
-    extra.set("signing.password", signingPassword)
-    extra.set("signing.secretKeyRingFile", secretKeyFile)
+if (centralUsername != null && centralPassword != null) {
     extra.set("centralUsername", centralUsername)
     extra.set("centralPassword", centralPassword)
+}
 
-    signing {
-        sign(publishing.publications["release"])
+signing {
+    when {
+        signingKey != null && signingPassword != null -> {
+            useInMemoryPgpKeys(keyId, signingKey, signingPassword)
+            sign(publishing.publications["release"])
+        }
+
+        keyId != null && signingPassword != null && secretKeyFile != null -> {
+            extra.set("signing.keyId", keyId)
+            extra.set("signing.password", signingPassword)
+            extra.set("signing.secretKeyRingFile", secretKeyFile)
+            sign(publishing.publications["release"])
+        }
     }
 }
 
