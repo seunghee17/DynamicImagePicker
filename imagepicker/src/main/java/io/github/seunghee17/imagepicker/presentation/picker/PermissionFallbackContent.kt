@@ -25,14 +25,14 @@ internal fun PermissionFallbackContent(
         PermissionStatus.PARTIALLY_GRANTED -> R.string.permission_partially_granted
         PermissionStatus.PERMANENTLY_DENIED -> R.string.permission_permanently_denied
         PermissionStatus.DENIED -> R.string.permission_denied
-        PermissionStatus.GRANTED -> R.string.app_name
+        PermissionStatus.GRANTED -> error("PermissionFallbackContent should not render in granted state")
     }
 
     val buttonLabelRes = when (state.permissionStatus) {
         PermissionStatus.PERMANENTLY_DENIED -> R.string.open_settings
         PermissionStatus.PARTIALLY_GRANTED -> R.string.request_full_permission
         PermissionStatus.DENIED -> R.string.request_permission
-        PermissionStatus.GRANTED -> R.string.app_name
+        PermissionStatus.GRANTED -> error("PermissionFallbackContent should not render in granted state")
     }
 
     Column(

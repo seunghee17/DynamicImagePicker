@@ -9,8 +9,7 @@ internal interface ImagePickerContract {
 
     @Stable
     data class State(
-        val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
-        val hasRequestedPermission: Boolean = false
+        val permissionStatus: PermissionStatus = PermissionStatus.DENIED
     )
 
     sealed interface Intent {
@@ -38,7 +37,6 @@ internal interface ImagePickerContract {
         data class NavigateToEditor(val image: GalleryImage, val entryId: Long) : Effect
         data class ReturnResult(val result: PickerResult) : Effect
         data object Cancelled : Effect
-        data class ShowToast(val message: String) : Effect
     }
 
     enum class PermissionCheckSource {

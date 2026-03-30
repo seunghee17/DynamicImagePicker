@@ -7,6 +7,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import io.github.seunghee17.imagepicker.PickedImage
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
+import io.github.seunghee17.imagepicker.domain.model.MediaType
 import io.github.seunghee17.imagepicker.domain.usecase.ClearEditCacheUseCase
 import io.github.seunghee17.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
 import io.github.seunghee17.imagepicker.domain.usecase.GetPagedImagesUseCase
@@ -156,7 +157,11 @@ internal class GalleryScreenViewModel(
     private fun buildPickerResult(): PickerResult {
         val current = _state.value
         val items = current.selectedImages.map { image ->
-            current.editResults[image.id] ?: PickedImage(originalUri = image.uri)
+            val base = current.editResults[image.id] ?: PickedImage(originalUri = image.uri)
+            base.copy(
+                isVideo = image.mediaType == MediaType.VIDEO,
+                videoDurationMs = image.videoDuration,
+            )
         }
         return PickerResult(items)
     }

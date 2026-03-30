@@ -1,6 +1,4 @@
 package io.github.seunghee17.imagepicker.presentation.picker
-
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.SnackbarHostState
@@ -136,8 +134,6 @@ internal fun ImagePickerScreen(
                 is ImagePickerContract.Effect.NavigateToSettings -> openAppSettings(context)
                 is ImagePickerContract.Effect.ReturnResult -> onResult(effect.result)
                 is ImagePickerContract.Effect.Cancelled -> onCancel()
-                is ImagePickerContract.Effect.ShowToast ->
-                    Toast.makeText(context, effect.message, android.widget.Toast.LENGTH_SHORT).show()
                 is ImagePickerContract.Effect.NavigateToEditor -> {
                     val tappedImage = effect.image
                     val selected = galleryState.selectedImages

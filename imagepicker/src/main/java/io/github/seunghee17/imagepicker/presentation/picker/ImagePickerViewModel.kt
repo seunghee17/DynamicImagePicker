@@ -51,13 +51,7 @@ internal class ImagePickerViewModel : ViewModel() {
         status: PermissionStatus,
         source: ImagePickerContract.PermissionCheckSource
     ) {
-        _state.update { current ->
-            current.copy(
-                permissionStatus = status,
-                hasRequestedPermission = current.hasRequestedPermission ||
-                        source == ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT
-            )
-        }
+        _state.update { current -> current.copy(permissionStatus = status) }
 
         when (status) {
             PermissionStatus.GRANTED -> Unit
