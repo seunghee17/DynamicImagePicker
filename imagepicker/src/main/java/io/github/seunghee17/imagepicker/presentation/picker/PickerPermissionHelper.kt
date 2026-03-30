@@ -32,14 +32,16 @@ internal fun requestedPermissionsForPicker(allowVideo: Boolean = false): Array<S
 
 internal fun resolvePermissionStatus(
     context: Context,
-    hasRequestedPermission: Boolean
+    hasRequestedPermission: Boolean,
+    allowVideo: Boolean = false
 ): PermissionStatus {
     val activity = context.findActivity()
-    val fullPermission = fullAccessPermission()
+    val fullPermissions = fullAccessPermissions(allowVideo)
 
-    val hasFullAccess = ContextCompat.checkSelfPermission(
-        context, fullPermission
-    ) == PackageManager.PERMISSION_GRANTED
+    // Check if all required permissions are granted
+    val hasFullAccess = fullPermissions.all { permission ->
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    }
     if (hasFullAccess) return PermissionStatus.GRANTED
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -49,8 +51,9 @@ internal fun resolvePermissionStatus(
         if (hasSelectedPhotoAccess) return PermissionStatus.PARTIALLY_GRANTED
     }
 
+    val primaryPermission = fullPermissions.first()
     val shouldShowRationale = activity?.let {
-        ActivityCompat.shouldShowRequestPermissionRationale(it, fullPermission)
+        ActivityCompat.shouldShowRequestPermissionRationale(it, primaryPermission)
     } ?: false
 
     return if (hasRequestedPermission && !shouldShowRationale) {
@@ -68,11 +71,20 @@ internal fun openAppSettings(context: Context) {
     context.startActivity(intent)
 }
 
-private fun fullAccessPermission(): String =
-    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    else
-        Manifest.permission.READ_MEDIA_IMAGES
+private fun fullAccessPermissions(allowVideo: Boolean = false): Array<String> = when {
+    Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 ->
+        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+        buildList {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
+            if (allowVideo) add(Manifest.permission.READ_MEDIA_VIDEO)
+        }.toTypedArray()
+    else ->
+        buildList {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
+            if (allowVideo) add(Manifest.permission.READ_MEDIA_VIDEO)
+        }.toTypedArray()
+}
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this

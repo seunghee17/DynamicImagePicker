@@ -58,7 +58,9 @@ private fun PickerHost(modifier: Modifier = Modifier) {
 
     if (showPicker) {
         DynamicImagePicker(
-            config = ImagePickerConfig(),
+            config = ImagePickerConfig(
+                allowVideo = true
+            ),
             onResult = { result ->
                 selectedImages = result.items
                 showPicker = false

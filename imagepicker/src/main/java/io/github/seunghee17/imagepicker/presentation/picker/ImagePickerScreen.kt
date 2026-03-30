@@ -67,7 +67,8 @@ internal fun ImagePickerScreen(
             ImagePickerContract.Intent.OnPermissionEvaluated(
                 status = resolvePermissionStatus(
                     context = context,
-                    hasRequestedPermission = hasRequestedPermission
+                    hasRequestedPermission = hasRequestedPermission,
+                    allowVideo = config.allowVideo
                 ),
                 source = ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT
             )
@@ -113,7 +114,7 @@ internal fun ImagePickerScreen(
     }
 
     // Effect 처리
-    LaunchedEffect(hasRequestedPermission) {
+    LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is ImagePickerContract.Effect.CheckPermission -> {
@@ -121,7 +122,8 @@ internal fun ImagePickerScreen(
                         ImagePickerContract.Intent.OnPermissionEvaluated(
                             status = resolvePermissionStatus(
                                 context = context,
-                                hasRequestedPermission = hasRequestedPermission
+                                hasRequestedPermission = hasRequestedPermission,
+                                allowVideo = config.allowVideo
                             ),
                             source = effect.source
                         )
