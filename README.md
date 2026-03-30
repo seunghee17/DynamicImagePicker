@@ -6,7 +6,6 @@ It focuses on the v1 core flow:
 
 - runtime permission handling
 - gallery image browsing
-- up to 10 image selection
 - drag multi-select
 - basic editing with rotate and crop
 - returning original and edited results
@@ -26,7 +25,7 @@ dependencies {
 ## Usage
 
 ```kotlin
-DynamicImagePicker.Content(
+DynamicImagePicker(
     config = ImagePickerConfig(maxSelectionCount = 10),
     onResult = { result -> /* handle PickerResult */ },
     onCancel = { /* handle cancel */ }
