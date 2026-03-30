@@ -30,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -214,7 +213,7 @@ private fun EditorImagePage(
     val latestOnActivate by rememberUpdatedState(onActivate)
     LaunchedEffect(isCurrentPage) {
         if (!isCurrentPage) return@LaunchedEffect
-        snapshotFlow { state }.collect { latestState ->
+        viewModel.state.collect { latestState ->
             latestOnActivate(latestState, viewModel::handleIntent)
         }
     }
