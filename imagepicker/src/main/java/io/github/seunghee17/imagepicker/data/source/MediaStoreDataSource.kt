@@ -3,10 +3,8 @@ package io.github.seunghee17.imagepicker.data.source
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.net.Uri
-import android.os.Build
 import android.provider.MediaStore
 import io.github.seunghee17.imagepicker.domain.model.GalleryAlbum
-import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -67,7 +65,7 @@ internal class MediaStoreDataSource(
                         id = albumId,
                         name = albumNameMap[albumId] ?: "",
                         coverUri = coverUri,
-                        imageCount = count
+                        count = count
                     )
                 }
         }
