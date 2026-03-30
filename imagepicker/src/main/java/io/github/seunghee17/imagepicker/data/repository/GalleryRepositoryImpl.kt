@@ -19,20 +19,16 @@ import kotlinx.coroutines.launch
 internal class GalleryRepositoryImpl(
     private val dataSource: MediaStoreDataSource,
     private val contentResolver: ContentResolver,
+    private val allowVideo: Boolean = false,
 ) : GalleryRepository {
 
-    /**
-     * 앨범 목록을 Flow로 반환한다.
-     * ContentObserver로 MediaStore 변경을 감지하여 갤러리에 사진이 추가/삭제되면
-     * 최신 앨범 목록을 재emit한다.
-     */
     override fun getAlbums(): Flow<List<GalleryAlbum>> = callbackFlow {
-        send(dataSource.queryAlbums())
+        send(dataSource.queryAlbums(allowVideo))
 
         val observer = object : ContentObserver(null) {
             override fun onChange(selfChange: Boolean) {
                 launch {
-                    runCatching { dataSource.queryAlbums() }
+                    runCatching { dataSource.queryAlbums(allowVideo) }
                         .onSuccess { trySend(it) }
                 }
             }
@@ -43,6 +39,13 @@ internal class GalleryRepositoryImpl(
             true,
             observer,
         )
+        if (allowVideo) {
+            contentResolver.registerContentObserver(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                true,
+                observer,
+            )
+        }
 
         awaitClose { contentResolver.unregisterContentObserver(observer) }
     }
@@ -50,7 +53,9 @@ internal class GalleryRepositoryImpl(
     override fun getPagedImages(albumId: String?): Flow<PagingData<GalleryImage>> =
         Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false),
-            pagingSourceFactory = { GalleryImagePagingSource(contentResolver, albumId) },
+            pagingSourceFactory = {
+                GalleryImagePagingSource(contentResolver, albumId, allowVideo)
+            },
         ).flow
 
     companion object {

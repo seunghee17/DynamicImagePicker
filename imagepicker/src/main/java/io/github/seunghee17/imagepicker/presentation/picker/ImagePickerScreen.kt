@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.seunghee17.imagepicker.ImagePickerConfig
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
+import io.github.seunghee17.imagepicker.domain.model.MediaType
 import io.github.seunghee17.imagepicker.domain.model.PermissionStatus
 import io.github.seunghee17.imagepicker.presentation.gallery.GalleryContract
 import io.github.seunghee17.imagepicker.presentation.gallery.GalleryScreen
@@ -128,7 +129,7 @@ internal fun ImagePickerScreen(
                 }
                 is ImagePickerContract.Effect.RequestPermission -> {
                     hasRequestedPermission = true
-                    permissionLauncher.launch(requestedPermissionsForPicker())
+                    permissionLauncher.launch(requestedPermissionsForPicker(config.allowVideo))
                 }
                 is ImagePickerContract.Effect.NavigateToSettings -> openAppSettings(context)
                 is ImagePickerContract.Effect.ReturnResult -> onResult(effect.result)
@@ -164,7 +165,12 @@ internal fun ImagePickerScreen(
                     snackbarHostState = snackbarHostState,
                     onIntent = galleryViewModel::handleIntent,
                     onOpenEditor = { image ->
-                        viewModel.handleIntent(ImagePickerContract.Intent.OpenEditor(image = image))
+                        if (image.mediaType == MediaType.VIDEO) {
+                            // Videos don't support editing; tap toggles selection instead
+                            galleryViewModel.handleIntent(GalleryContract.Intent.ToggleImageSelection(image))
+                        } else {
+                            viewModel.handleIntent(ImagePickerContract.Intent.OpenEditor(image = image))
+                        }
                     },
                 )
             }
