@@ -51,22 +51,32 @@ internal class ImagePickerViewModel : ViewModel() {
         status: PermissionStatus,
         source: ImagePickerContract.PermissionCheckSource
     ) {
-        _state.update { current ->
-            current.copy(
-                permissionStatus = status,
-                hasRequestedPermission = current.hasRequestedPermission ||
-                        source == ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT
-            )
-        }
-
         when (status) {
-            PermissionStatus.GRANTED -> Unit
+            PermissionStatus.GRANTED -> {
+                _state.update {
+                    it.copy(
+                        permissionStatus = status,
+                        hasRequestedFullAccessAfterPartial = false,
+                    )
+                }
+            }
             PermissionStatus.PARTIALLY_GRANTED -> {
-                if (source != ImagePickerContract.PermissionCheckSource.RESUME) {
+                val hasRequestedFullAccess = _state.value.hasRequestedFullAccessAfterPartial
+                _state.update { it.copy(permissionStatus = status) }
+                if (source != ImagePickerContract.PermissionCheckSource.RESUME &&
+                    !hasRequestedFullAccess
+                ) {
+                    _state.update { it.copy(hasRequestedFullAccessAfterPartial = true) }
                     sendEffect(ImagePickerContract.Effect.RequestPermission)
                 }
             }
             PermissionStatus.DENIED -> {
+                _state.update {
+                    it.copy(
+                        permissionStatus = status,
+                        hasRequestedFullAccessAfterPartial = false,
+                    )
+                }
                 if (source == ImagePickerContract.PermissionCheckSource.INITIAL ||
                     source == ImagePickerContract.PermissionCheckSource.RETRY_BUTTON
                 ) {
@@ -74,6 +84,12 @@ internal class ImagePickerViewModel : ViewModel() {
                 }
             }
             PermissionStatus.PERMANENTLY_DENIED -> {
+                _state.update {
+                    it.copy(
+                        permissionStatus = status,
+                        hasRequestedFullAccessAfterPartial = false,
+                    )
+                }
                 if (source == ImagePickerContract.PermissionCheckSource.PERMISSION_RESULT ||
                     source == ImagePickerContract.PermissionCheckSource.RETRY_BUTTON
                 ) {

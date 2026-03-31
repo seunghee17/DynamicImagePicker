@@ -1,5 +1,6 @@
 package io.github.seunghee17.imagepicker.presentation.gallery
 
+import androidx.compose.runtime.Stable
 import io.github.seunghee17.imagepicker.domain.model.GalleryAlbum
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.PickedImage
@@ -7,19 +8,20 @@ import io.github.seunghee17.imagepicker.PickerResult
 
 internal interface GalleryContract {
 
+    @Stable
     data class State(
         val albums: List<GalleryAlbum> = emptyList(),
         val selectedAlbum: GalleryAlbum? = null,
-        val images: List<GalleryImage> = emptyList(),
         val selectedImages: List<GalleryImage> = emptyList(),
-        val isLoadingImages: Boolean = false,
         val maxSelectionCount: Int = 10,
         val showAlbumSelector: Boolean = true,
-        val error: String? = null,
-        val editResults: Map<Long, PickedImage> = emptyMap()
+        val editResults: Map<Long, PickedImage> = emptyMap(),
     ) {
         val isSelectionLimitReached: Boolean
             get() = selectedImages.size >= maxSelectionCount
+
+        val selectionOrderMap: Map<Long, Int>
+            get() = selectedImages.mapIndexed { idx, img -> img.id to (idx + 1) }.toMap()
     }
 
     sealed interface Intent {
@@ -32,7 +34,7 @@ internal interface GalleryContract {
     }
 
     sealed interface Effect {
-        data class ShowSelectionLimitSnackbar(val message: String) : Effect
+        data class ShowSelectionLimitSnackbar(val maxSelectionCount: Int) : Effect
         data class SelectionConfirmed(val result: PickerResult) : Effect
         data object Cancelled : Effect
     }

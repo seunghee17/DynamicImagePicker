@@ -1,6 +1,5 @@
 package io.github.seunghee17.imagepicker.presentation.gallery
 
-import android.provider.CalendarContract
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
@@ -39,12 +38,12 @@ internal fun AlbumDropdown(
         ) {
             Row {
                 Text(
-                    text = selectedAlbum?.name ?: "전체",
+                    text = selectedAlbum?.name ?: "All",
                     color = Color.Black
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "드롭다운",
+                    contentDescription = "Dropdown",
                     tint = Color.Black
                 )
             }
@@ -55,7 +54,7 @@ internal fun AlbumDropdown(
         ) {
             albums.forEach { album ->
                 DropdownMenuItem(
-                    text = { Text("${album.name} (${album.imageCount})") },
+                    text = { Text("${album.name} (${album.count})") },
                     onClick = {
                         onAlbumSelected(album)
                         closeDropDown()

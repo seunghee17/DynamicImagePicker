@@ -61,6 +61,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
+        freeCompilerArgs += listOf(
+            "-P", "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=" +
+            file("stability_config.conf").absolutePath
+        )
     }
 
     publishing {
@@ -167,8 +171,13 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
+    // Paging 3
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
     // Image loading
     implementation(libs.coil.compose)
+    implementation(libs.coil.video)
 
     // Testing
     testImplementation(libs.junit)

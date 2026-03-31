@@ -72,7 +72,6 @@ internal class EditorViewModel(
                     cropRect = it.cropRectOnEnter,
                 ) }
             EditorContract.Intent.SaveAndReturn -> save()
-            EditorContract.Intent.Cancel -> sendEffect(EditorContract.Effect.Cancelled)
         }
     }
 
@@ -124,7 +123,6 @@ internal class EditorViewModel(
      * committedUri에 pendingRotation을 EXIF로 적용하여 previewUri를 갱신한다.
      * pendingRotation == 0이면 committedUri를 그대로 사용한다.
      *
-     * [Job 취소 전략]
      * 회전 버튼 연타 시 이전 작업을 취소하고 최신 상태로 재시작하여
      * 불필요한 중간 연산을 생략한다.
      */

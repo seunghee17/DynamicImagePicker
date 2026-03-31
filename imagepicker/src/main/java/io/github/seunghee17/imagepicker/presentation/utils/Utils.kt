@@ -15,6 +15,11 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 
+internal data class DragSelectionState(
+    val offset: Offset,
+    val lastProcessedKey: Long?,
+)
+
 // 현재 터치한 좌표를 매개변수로 받는다
 // 이 아이템 영역 안에 현재 터치좌표가 들어가 있는가? 만약 찾은 아이템이 있다면 key 반환 없으면 null
 internal fun LazyGridState.gridItemKeyAtPosition(hitPoint: Offset): Long? =
@@ -30,7 +35,8 @@ internal fun Modifier.photoGridDragHandler(
     selectedImages: List<GalleryImage>,
     onSelect: (Long) -> Unit, // viewmodel에 정의한 사진 선택 콜백 주입하도록 수정
     autoScrollSpeed: MutableState<Float>,
-    autoScrollThreshold: Float
+    autoScrollThreshold: Float,
+    currentDragState: MutableState<DragSelectionState?> // 자동 스크롤 중 중복 토글 방지를 위해 좌표와 마지막 처리 key를 함께 노출
 ): Modifier = composed {
     val currentSelectedImages by rememberUpdatedState(selectedImages)
     val currentOnSelect by rememberUpdatedState(onSelect)
@@ -48,19 +54,31 @@ internal fun Modifier.photoGridDragHandler(
                         initialKey = key
                         currentKey = key
                         currentOnSelect(key)
+                        currentDragState.value = DragSelectionState(
+                            offset = offset,
+                            lastProcessedKey = key,
+                        )
                     }
                 }
             },
             onDragCancel = {
                 initialKey = null
+                currentKey = null
                 autoScrollSpeed.value = 0f
+                currentDragState.value = null
             },
             onDragEnd = {
                 initialKey = null
+                currentKey = null
                 autoScrollSpeed.value = 0f
+                currentDragState.value = null
             },
             onDrag = { change, _ ->
                 if (initialKey != null) {
+                    currentDragState.value = DragSelectionState(
+                        offset = change.position,
+                        lastProcessedKey = currentDragState.value?.lastProcessedKey,
+                    )
                     val distFromBottom =
                         lazyGridState.layoutInfo.viewportSize.height - change.position.y
                     val distFromTop = change.position.y
@@ -74,6 +92,10 @@ internal fun Modifier.photoGridDragHandler(
                         if (currentKey != key && currentSelectedImages.none { it.id == key }) {
                             currentOnSelect(key)
                             currentKey = key
+                            currentDragState.value = DragSelectionState(
+                                offset = change.position,
+                                lastProcessedKey = key,
+                            )
                         }
                     }
                 }

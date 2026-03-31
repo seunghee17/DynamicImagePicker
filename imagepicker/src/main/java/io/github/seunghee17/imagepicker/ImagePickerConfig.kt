@@ -6,9 +6,11 @@ package io.github.seunghee17.imagepicker
  * @param maxSelectionCount 최대 선택 가능 이미지 수 (기본값: 10)
  * @param showAlbumSelector 앨범 선택 드롭다운 표시 여부
  * @param allowEditing      편집(회전/크롭) 기능 제공 여부
+ * @param allowVideo        비디오 선택 허용 여부
  */
 data class ImagePickerConfig(
     val maxSelectionCount: Int = 10,
     val showAlbumSelector: Boolean = true,
-    val allowEditing: Boolean = true
+    val allowEditing: Boolean = true,
+    val allowVideo: Boolean = false,
 )

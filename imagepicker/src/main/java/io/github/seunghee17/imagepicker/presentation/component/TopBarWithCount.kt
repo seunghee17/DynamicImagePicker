@@ -6,6 +6,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import io.github.seunghee17.imagepicker.R
 import io.github.seunghee17.imagepicker.domain.model.GalleryAlbum
 import io.github.seunghee17.imagepicker.presentation.gallery.AlbumDropdown
 
@@ -31,11 +33,11 @@ internal fun TopBarWithCount(
     TopAppBar(
         modifier = modifier,
         title = {
-            Text(text = if (selectedCount > 0) "$selectedCount / $maxCount" else "사진 선택")
+            Text(text = if (selectedCount > 0) stringResource(R.string.selection_count, selectedCount, maxCount) else stringResource(R.string.select_photo))
         },
         navigationIcon = {
             TextButton(onClick = onCancel) {
-                Text("취소")
+                Text(stringResource(R.string.cancel))
             }
         },
         actions = {
@@ -43,7 +45,7 @@ internal fun TopBarWithCount(
                 onClick = onConfirm,
                 enabled = selectedCount > 0
             ) {
-                Text("완료")
+                Text(stringResource(R.string.done))
             }
             if (showAlbumSelector) {
                 AlbumDropdown(

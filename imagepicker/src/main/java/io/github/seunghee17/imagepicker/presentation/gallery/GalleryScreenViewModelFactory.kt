@@ -11,7 +11,7 @@ import io.github.seunghee17.imagepicker.data.source.ImageFileDataSource
 import io.github.seunghee17.imagepicker.data.source.MediaStoreDataSource
 import io.github.seunghee17.imagepicker.domain.usecase.ClearEditCacheUseCase
 import io.github.seunghee17.imagepicker.domain.usecase.GetGalleryAlbumsUseCase
-import io.github.seunghee17.imagepicker.domain.usecase.GetImagesInAlbumUseCase
+import io.github.seunghee17.imagepicker.domain.usecase.GetPagedImagesUseCase
 
 internal class GalleryScreenViewModelFactory(
     private val context: Context,
@@ -25,11 +25,12 @@ internal class GalleryScreenViewModelFactory(
         val galleryRepository = GalleryRepositoryImpl(
             dataSource = MediaStoreDataSource(appContext.contentResolver),
             contentResolver = appContext.contentResolver,
+            allowVideo = config.allowVideo,
         )
         val imageEditRepository = ImageEditRepositoryImpl(ImageFileDataSource(appContext))
         return GalleryScreenViewModel(
             getAlbums = GetGalleryAlbumsUseCase(galleryRepository),
-            getImagesInAlbum = GetImagesInAlbumUseCase(galleryRepository),
+            getPagedImages = GetPagedImagesUseCase(galleryRepository),
             clearEditCache = ClearEditCacheUseCase(imageEditRepository),
             maxSelectionCount = config.maxSelectionCount,
             showAlbumSelector = config.showAlbumSelector,
