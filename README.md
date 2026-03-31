@@ -6,6 +6,7 @@ It focuses on the v1 core flow:
 
 - runtime permission handling
 - gallery image browsing
+- configurable max image selection count with selection order support
 - drag multi-select
 - basic editing with rotate and crop
 - returning original and edited results

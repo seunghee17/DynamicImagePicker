@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -41,6 +40,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.presentation.component.TopBarWithCount
+import io.github.seunghee17.imagepicker.presentation.utils.DragSelectionState
 import io.github.seunghee17.imagepicker.presentation.utils.gridItemKeyAtPosition
 import io.github.seunghee17.imagepicker.presentation.utils.photoGridDragHandler
 import kotlinx.coroutines.delay
@@ -60,7 +60,7 @@ internal fun GalleryScreen(
     val context = LocalContext.current
     val gridState = rememberLazyGridState()
     val autoScrollSpeed = remember { mutableFloatStateOf(0f) }
-    val currentDragOffset = remember { mutableStateOf<Offset?>(null) }
+    val currentDragState = remember { mutableStateOf<DragSelectionState?>(null) }
     val currentState by rememberUpdatedState(state)
     var dropDownExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -95,11 +95,14 @@ internal fun GalleryScreen(
             .collect { _ ->
                 while (autoScrollSpeed.floatValue != 0f) {
                     gridState.scrollBy(autoScrollSpeed.floatValue)
-                    currentDragOffset.value?.let { offset ->
-                        gridState.gridItemKeyAtPosition(offset)?.let { key ->
-                            if (currentState.selectedImages.none { it.id == key }) {
+                    currentDragState.value?.let { dragState ->
+                        gridState.gridItemKeyAtPosition(dragState.offset)?.let { key ->
+                            if (dragState.lastProcessedKey != key &&
+                                currentState.selectedImages.none { it.id == key }
+                            ) {
                                 currentItemsById[key]?.let { image ->
                                     onIntent(GalleryContract.Intent.ToggleImageSelection(image))
+                                    currentDragState.value = dragState.copy(lastProcessedKey = key)
                                 }
                             }
                         }
@@ -172,7 +175,7 @@ internal fun GalleryScreen(
                             },
                             autoScrollSpeed = autoScrollSpeed,
                             autoScrollThreshold = with(LocalDensity.current) { 40.dp.toPx() },
-                            currentDragOffset = currentDragOffset,
+                            currentDragState = currentDragState,
                         )
                 ) {
                     items(

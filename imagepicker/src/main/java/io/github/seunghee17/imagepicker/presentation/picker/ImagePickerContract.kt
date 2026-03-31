@@ -9,7 +9,8 @@ internal interface ImagePickerContract {
 
     @Stable
     data class State(
-        val permissionStatus: PermissionStatus = PermissionStatus.DENIED
+        val permissionStatus: PermissionStatus = PermissionStatus.DENIED,
+        val hasRequestedFullAccessAfterPartial: Boolean = false,
     )
 
     sealed interface Intent {

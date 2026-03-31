@@ -51,9 +51,13 @@ internal fun resolvePermissionStatus(
         if (hasSelectedPhotoAccess) return PermissionStatus.PARTIALLY_GRANTED
     }
 
-    val primaryPermission = fullPermissions.first()
-    val shouldShowRationale = activity?.let {
-        ActivityCompat.shouldShowRequestPermissionRationale(it, primaryPermission)
+    val deniedPermissions = fullPermissions.filter { permission ->
+        ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED
+    }
+    val shouldShowRationale = activity?.let { host ->
+        deniedPermissions.any { permission ->
+            ActivityCompat.shouldShowRequestPermissionRationale(host, permission)
+        }
     } ?: false
 
     return if (hasRequestedPermission && !shouldShowRationale) {

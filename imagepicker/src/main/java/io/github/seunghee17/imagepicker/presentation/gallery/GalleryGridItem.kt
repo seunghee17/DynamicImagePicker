@@ -50,7 +50,7 @@ internal fun GalleryGridItem(
     val currentOnOpenEditor by rememberUpdatedState(onOpenEditor)
     val currentOnSelectionBadgeTap by rememberUpdatedState(onSelectionBadgeTap)
 
-    val handleTap: () -> Unit = {
+    val handleTileTap: () -> Unit = {
         if (image.mediaType == MediaType.VIDEO) {
             currentOnSelectionBadgeTap()
         } else {
@@ -66,7 +66,7 @@ internal fun GalleryGridItem(
                 else Modifier
             )
             .pointerInput(image.mediaType) {
-                detectTapGestures(onTap = { handleTap() })
+                detectTapGestures(onTap = { handleTileTap() })
             }
     ) {
         AsyncImage(
@@ -122,7 +122,7 @@ internal fun GalleryGridItem(
                 .align(Alignment.TopEnd)
                 .padding(4.dp),
             order = selectionOrder,
-            onTap = { handleTap() },
+            onTap = { currentOnSelectionBadgeTap() },
         )
     }
 }

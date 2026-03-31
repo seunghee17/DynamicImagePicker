@@ -34,7 +34,7 @@ internal interface GalleryContract {
     }
 
     sealed interface Effect {
-        data class ShowSelectionLimitSnackbar(val message: String) : Effect
+        data class ShowSelectionLimitSnackbar(val maxSelectionCount: Int) : Effect
         data class SelectionConfirmed(val result: PickerResult) : Effect
         data object Cancelled : Effect
     }

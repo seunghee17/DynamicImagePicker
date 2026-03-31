@@ -19,6 +19,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.seunghee17.imagepicker.ImagePickerConfig
+import io.github.seunghee17.imagepicker.R
 import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 import io.github.seunghee17.imagepicker.domain.model.MediaType
 import io.github.seunghee17.imagepicker.domain.model.PermissionStatus
@@ -93,7 +94,12 @@ internal fun ImagePickerScreen(
         galleryViewModel.effect.collectLatest { galleryEffect ->
             when (galleryEffect) {
                 is GalleryContract.Effect.ShowSelectionLimitSnackbar ->
-                    snackbarHostState.showSnackbar(galleryEffect.message)
+                    snackbarHostState.showSnackbar(
+                        context.getString(
+                            R.string.selection_limit,
+                            galleryEffect.maxSelectionCount,
+                        )
+                    )
                 is GalleryContract.Effect.SelectionConfirmed ->
                     viewModel.handleIntent(ImagePickerContract.Intent.ConfirmSelection(galleryEffect.result))
                 GalleryContract.Effect.Cancelled ->

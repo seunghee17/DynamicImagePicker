@@ -96,10 +96,10 @@ internal class GalleryScreenViewModel(
                     val selectedAlbum = current.selectedAlbum ?: albums.firstOrNull()
                     current.copy(albums = albums, selectedAlbum = selectedAlbum)
                 }
-                // 첫 번째 앨범 로드 시에만 Pending → Active 전환.
-                // 이후 ContentObserver 로 앨범이 갱신되어도 PagingSource 가 자체 invalidate 처리.
-                if (_albumFilter.value is AlbumFilter.Pending) {
-                    _albumFilter.value = AlbumFilter.Active(_state.value.selectedAlbum?.id)
+                val selectedAlbumId = _state.value.selectedAlbum?.id
+                val nextFilter = AlbumFilter.Active(selectedAlbumId)
+                if (_albumFilter.value != nextFilter) {
+                    _albumFilter.value = nextFilter
                 }
             }
             .launchIn(viewModelScope)
@@ -116,9 +116,7 @@ internal class GalleryScreenViewModel(
         if (current.isSelectionLimitReached) {
             viewModelScope.launch {
                 _effect.send(
-                    GalleryContract.Effect.ShowSelectionLimitSnackbar(
-                        "최대 ${current.maxSelectionCount}개까지 선택할 수 있습니다."
-                    )
+                    GalleryContract.Effect.ShowSelectionLimitSnackbar(current.maxSelectionCount)
                 )
             }
             return
