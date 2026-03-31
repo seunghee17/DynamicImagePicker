@@ -21,10 +21,10 @@ fun resolvePublishProperty(primaryKey: String, fallbackKey: String? = null): Str
         ?: fallbackKey?.let(localProperties::getProperty)
 }
 
-val keyId = resolvePublishProperty("signing.keyId")
-val signingPassword = resolvePublishProperty("signing.password")
+val keyId = resolvePublishProperty("signing.keyId", "signingKeyId")
+val signingPassword = resolvePublishProperty("signing.password", "signingPassword")
 val signingKey = resolvePublishProperty("signingKey", "signing.key")
-val secretKeyFile = resolvePublishProperty("signing.secretKeyRingFile")
+val secretKeyFile = resolvePublishProperty("signing.secretKeyRingFile", "signingSecretKeyRingFile")
 val centralUsername = resolvePublishProperty("centralUsername", "ossrhUsername")
 val centralPassword = resolvePublishProperty("centralPassword", "ossrhPassword")
 val libraryGroupId = providers.gradleProperty("GROUP").orNull ?: "io.github.seunghee17"

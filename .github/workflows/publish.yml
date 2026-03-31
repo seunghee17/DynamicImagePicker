@@ -42,14 +42,22 @@ jobs:
         id: version
         shell: bash
         run: |
+          GROUP="$(grep '^GROUP=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')"
           VERSION_NAME="$(grep '^VERSION_NAME=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')"
+
+          if [[ -z "${GROUP}" ]]; then
+            echo "GROUP is empty."
+            exit 1
+          fi
 
           if [[ -z "${VERSION_NAME}" ]]; then
             echo "VERSION_NAME is empty."
             exit 1
           fi
 
+          echo "group=${GROUP}" >> "${GITHUB_OUTPUT}"
           echo "version_name=${VERSION_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "GROUP=${GROUP}" >> "${GITHUB_ENV}"
           echo "VERSION_NAME=${VERSION_NAME}" >> "${GITHUB_ENV}"
 
       - name: Check whether this push should publish
@@ -92,3 +100,23 @@ jobs:
           ORG_GRADLE_PROJECT_centralUsername: ${{ secrets.SONATYPE_USERNAME }}
           ORG_GRADLE_PROJECT_centralPassword: ${{ secrets.SONATYPE_PASSWORD }}
         run: ./gradlew :imagepicker:publishReleasePublicationToCentralRepository
+
+      - name: Transfer staged deployment to Central Portal
+        if: steps.gate.outputs.should_publish == 'true'
+        env:
+          CENTRAL_NAMESPACE: ${{ steps.version.outputs.group }}
+          CENTRAL_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        shell: bash
+        run: |
+          if [[ -z "${CENTRAL_USERNAME}" || -z "${CENTRAL_PASSWORD}" ]]; then
+            echo "Central Portal token is missing."
+            exit 1
+          fi
+
+          AUTH_TOKEN="$(printf '%s' "${CENTRAL_USERNAME}:${CENTRAL_PASSWORD}" | base64 | tr -d '\n')"
+
+          curl --fail-with-body \
+            --request POST \
+            --header "Authorization: Bearer ${AUTH_TOKEN}" \
+            "https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/${CENTRAL_NAMESPACE}?publishing_type=automatic"
