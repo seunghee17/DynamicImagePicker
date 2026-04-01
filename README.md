@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.seunghee17:imagepicker:1.0.0")
+    implementation("io.github.seunghee17:imagepicker:1.0.2")
 }
 ```
 
