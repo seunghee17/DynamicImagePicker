@@ -5,7 +5,7 @@
 It focuses on the v1 core flow:
 
 - runtime permission handling
-- gallery image browsing
+- gallery image, video browsing
 - configurable max image selection count with selection order support
 - drag multi-select
 - basic editing with rotate and crop
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.seunghee17:imagepicker:1.0.0")
+    implementation("io.github.seunghee17:imagepicker:1.0.2")
 }
 ```
 
