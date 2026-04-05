@@ -16,6 +16,7 @@ internal interface GalleryContract {
         val maxSelectionCount: Int = 10,
         val showAlbumSelector: Boolean = true,
         val editResults: Map<Long, PickedImage> = emptyMap(),
+        val isAlbumsLoading: Boolean = true,
     ) {
         val isSelectionLimitReached: Boolean
             get() = selectedImages.size >= maxSelectionCount
