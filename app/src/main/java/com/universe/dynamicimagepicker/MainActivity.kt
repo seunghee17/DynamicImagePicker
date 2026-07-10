@@ -31,7 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -62,8 +62,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun PickerHost(modifier: Modifier = Modifier) {
-    var showPicker by remember { mutableStateOf(false) }
-    var selectedImages by remember { mutableStateOf(emptyList<PickedImage>()) }
+    var showPicker by rememberSaveable { mutableStateOf(false) }
+    var selectedImages by rememberSaveable { mutableStateOf(emptyList<PickedImage>()) }
 
     if (showPicker) {
         DynamicImagePicker(

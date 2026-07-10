@@ -46,7 +46,7 @@ import io.github.seunghee17.imagepicker.presentation.utils.photoGridDragHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 
-/// 갤러리 이미지 그리드 화면 (권한이 허용된 상태에서 표시).
+/// 갤러리 이미지 화면 (권한이 허용된 상태에서 표시).
 
 @Composable
 internal fun GalleryScreen(

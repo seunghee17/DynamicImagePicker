@@ -1,14 +1,18 @@
 package io.github.seunghee17.imagepicker
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
 /**
  * 정규화된 크롭 영역. 모든 값은 이미지 크기 대비 [0f, 1f] 범위.
  */
+@Parcelize
 data class CropRect(
     val left: Float,
     val top: Float,
     val right: Float,
     val bottom: Float
-) {
+) : Parcelable {
     init {
         require(left >= 0f && top >= 0f && right <= 1f && bottom <= 1f) {
             "CropRect 값은 [0f, 1f] 범위 내에 있어야 합니다."
