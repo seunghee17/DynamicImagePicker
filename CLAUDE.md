@@ -1,6 +1,6 @@
 # Project Purpose
 This project implements an image picker library for Android using Jetpack Compose.
-v1 focuses on the core image selection flow.
+v1 focuses on the core image selection flow. continue to work v3
 
 ### Development Goals
 - Implement a reusable Image Picker component for use across apps
