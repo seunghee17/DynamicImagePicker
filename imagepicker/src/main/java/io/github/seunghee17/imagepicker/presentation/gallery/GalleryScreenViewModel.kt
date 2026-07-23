@@ -18,9 +18,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -35,24 +36,6 @@ internal class GalleryScreenViewModel(
     showAlbumSelector: Boolean = true,
 ) : ViewModel() {
 
-    // 앨범 선택 상태: 아직 앨범 목록이 로드되지 않은 Pending vs 실제 선택된 Active
-    private sealed interface AlbumFilter {
-        data object Pending : AlbumFilter
-        data class Active(val albumId: String?) : AlbumFilter
-    }
-
-    private val _albumFilter = MutableStateFlow<AlbumFilter>(AlbumFilter.Pending)
-
-    /**
-     * 현재 선택된 앨범의 이미지를 페이지 단위로 방출하는 Flow.
-     * [GalleryScreen] 에서 [collectAsLazyPagingItems] 로 소비한다.
-     */
-    val pagingFlow: Flow<PagingData<GalleryImage>> = _albumFilter
-        .filterIsInstance<AlbumFilter.Active>()
-        .distinctUntilChanged()
-        .flatMapLatest { filter -> getPagedImages(filter.albumId) }
-        .cachedIn(viewModelScope)
-
     private val _state = MutableStateFlow(
         GalleryContract.State(
             maxSelectionCount = maxSelectionCount,
@@ -64,8 +47,21 @@ internal class GalleryScreenViewModel(
     private val _effect = Channel<GalleryContract.Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
+
+    val pagingFlow: Flow<PagingData<GalleryImage>> = _state
+        .filter { !it.isAlbumsLoading }
+        .map { it.selectedAlbum?.id }
+        .distinctUntilChanged()
+        .flatMapLatest { albumId -> getPagedImages(albumId) }
+        .cachedIn(viewModelScope)
+
     private var albumsObserved = false
     private var pendingCacheClean = false
+
+    // 드래그 range 선택 중에만 쓰이는 임시 상태 (드래그 제스처 시작~종료 스코프)
+    private var dragBaseline: List<GalleryImage>? = null
+    private var dragIsDeselecting = false
+    private var dragLimitSnackbarShown = false
 
     fun handleIntent(intent: GalleryContract.Intent) {
         when (intent) {
@@ -76,11 +72,12 @@ internal class GalleryScreenViewModel(
                 }
                 observeAlbums()
             }
-            is GalleryContract.Intent.SelectAlbum -> {
+            is GalleryContract.Intent.SelectAlbum ->
                 _state.update { it.copy(selectedAlbum = intent.album) }
-                _albumFilter.value = AlbumFilter.Active(intent.album.id)
-            }
             is GalleryContract.Intent.ToggleImageSelection -> toggleSelection(intent.image)
+            is GalleryContract.Intent.BeginDragSelection -> beginDragSelection(intent.anchorImage)
+            is GalleryContract.Intent.UpdateDragSelectionRange -> updateDragSelectionRange(intent.rangeImages)
+            GalleryContract.Intent.EndDragSelection -> endDragSelection()
             is GalleryContract.Intent.OnEditResult -> applyEditResult(intent.pickedImage)
             GalleryContract.Intent.Confirm -> confirmSelection()
             GalleryContract.Intent.Cancel -> cancel()
@@ -93,13 +90,11 @@ internal class GalleryScreenViewModel(
         getAlbums()
             .onEach { albums ->
                 _state.update { current ->
-                    val selectedAlbum = current.selectedAlbum ?: albums.firstOrNull()
-                    current.copy(albums = albums, selectedAlbum = selectedAlbum)
-                }
-                val selectedAlbumId = _state.value.selectedAlbum?.id
-                val nextFilter = AlbumFilter.Active(selectedAlbumId)
-                if (_albumFilter.value != nextFilter) {
-                    _albumFilter.value = nextFilter
+                    current.copy(
+                        albums = albums,
+                        selectedAlbum = current.selectedAlbum ?: albums.firstOrNull(),
+                        isAlbumsLoading = false,
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -123,6 +118,47 @@ internal class GalleryScreenViewModel(
         }
 
         _state.update { it.copy(selectedImages = it.selectedImages + image) }
+    }
+
+    // Google Photos 스타일 드래그 range 선택: 롱프레스한 anchor가 이미 선택되어 있었다면 해제 모드,
+    // 아니라면 선택 모드로 이번 드래그 제스처의 목표 동작을 고정한다.
+    private fun beginDragSelection(anchorImage: GalleryImage) {
+        val current = _state.value
+        dragBaseline = current.selectedImages
+        dragIsDeselecting = current.selectedImages.any { it.id == anchorImage.id }
+        dragLimitSnackbarShown = false
+    }
+
+    // anchor~현재 손가락 위치 사이의 range를 매번 baseline 기준으로 다시 계산한다.
+    // (증분 누적이 아니므로 손가락을 되돌리면 range 밖으로 나간 항목이 자동으로 원상복구된다)
+    private fun updateDragSelectionRange(rangeImages: List<GalleryImage>) {
+        val baseline = dragBaseline ?: return
+        val rangeIds = rangeImages.map { it.id }.toSet()
+
+        val desired = if (dragIsDeselecting) {
+            baseline.filter { it.id !in rangeIds }
+        } else {
+            baseline + rangeImages.filter { image -> baseline.none { it.id == image.id } }
+        }
+
+        val maxCount = _state.value.maxSelectionCount
+        if (desired.size > maxCount) {
+            _state.update { it.copy(selectedImages = desired.take(maxCount)) }
+            if (!dragLimitSnackbarShown) {
+                dragLimitSnackbarShown = true
+                viewModelScope.launch {
+                    _effect.send(GalleryContract.Effect.ShowSelectionLimitSnackbar(maxCount))
+                }
+            }
+        } else {
+            _state.update { it.copy(selectedImages = desired) }
+        }
+    }
+
+    private fun endDragSelection() {
+        dragBaseline = null
+        dragIsDeselecting = false
+        dragLimitSnackbarShown = false
     }
 
     private fun applyEditResult(pickedImage: PickedImage) {

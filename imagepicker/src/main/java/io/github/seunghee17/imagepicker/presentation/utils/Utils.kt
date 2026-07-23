@@ -1,5 +1,6 @@
 package io.github.seunghee17.imagepicker.presentation.utils
 
+import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
@@ -17,68 +18,85 @@ import io.github.seunghee17.imagepicker.domain.model.GalleryImage
 
 internal data class DragSelectionState(
     val offset: Offset,
-    val lastProcessedKey: Long?,
+    val anchorIndex: Int,
+    val lastProcessedIndex: Int?,
 )
 
 // 현재 터치한 좌표를 매개변수로 받는다
-// 이 아이템 영역 안에 현재 터치좌표가 들어가 있는가? 만약 찾은 아이템이 있다면 key 반환 없으면 null
-internal fun LazyGridState.gridItemKeyAtPosition(hitPoint: Offset): Long? =
+// 이 아이템 영역 안에 현재 터치좌표가 들어가 있는가? 만약 찾은 아이템이 있다면 그 아이템 정보(키/그리드 인덱스 포함) 반환, 없으면 null
+internal fun LazyGridState.gridItemInfoAtPosition(hitPoint: Offset): LazyGridItemInfo? =
     // 현재 화면에 보이는 아이템 정보 리스트
     layoutInfo.visibleItemsInfo.find { itemInfo ->
         itemInfo.size.toIntRect()
             .contains(hitPoint.round() - itemInfo.offset) // global 좌표를 item local 좌표로 변환
-    }?.key as? Long
+    }
+
+// anchor(드래그 시작 지점)와 current(현재 손가락 위치) 사이의 grid 선형 인덱스 범위를
+// 방향과 무관하게 오름차순(좌→우, 위→아래)으로 계산한다. 아직 로드되지 않은 인덱스는 건너뛴다.
+internal fun computeDragRange(
+    anchorIndex: Int,
+    currentIndex: Int,
+    images: List<GalleryImage>,
+): List<GalleryImage> {
+    val from = minOf(anchorIndex, currentIndex)
+    val to = maxOf(anchorIndex, currentIndex)
+    return (from..to).mapNotNull { images.getOrNull(it) }
+}
 
 internal fun Modifier.photoGridDragHandler(
     lazyGridState: LazyGridState,
     haptics: HapticFeedback,
-    selectedImages: List<GalleryImage>,
-    onSelect: (Long) -> Unit, // viewmodel에 정의한 사진 선택 콜백 주입하도록 수정
+    imagesSnapshot: List<GalleryImage>, // grid 인덱스 순으로 정렬된, 현재 로드된 이미지 스냅샷
+    onBeginDrag: (GalleryImage) -> Unit, // anchor로 선택된 이미지를 viewmodel에 알림 (선택/해제 모드 결정용)
+    onUpdateRange: (List<GalleryImage>) -> Unit, // anchor~현재 위치 range를 viewmodel에 알림
+    onEndDrag: () -> Unit, // 드래그 종료(취소 포함)를 viewmodel에 알림
     autoScrollSpeed: MutableState<Float>,
     autoScrollThreshold: Float,
-    currentDragState: MutableState<DragSelectionState?> // 자동 스크롤 중 중복 토글 방지를 위해 좌표와 마지막 처리 key를 함께 노출
+    currentDragState: MutableState<DragSelectionState?> // 자동 스크롤 중 range 재계산을 위해 anchor/좌표/마지막 처리 인덱스를 함께 노출
 ): Modifier = composed {
-    val currentSelectedImages by rememberUpdatedState(selectedImages)
-    val currentOnSelect by rememberUpdatedState(onSelect)
+    val currentImagesSnapshot by rememberUpdatedState(imagesSnapshot)
+    val currentOnBeginDrag by rememberUpdatedState(onBeginDrag)
+    val currentOnUpdateRange by rememberUpdatedState(onUpdateRange)
+    val currentOnEndDrag by rememberUpdatedState(onEndDrag)
 
     pointerInput(Unit) {
-        var initialKey: Long? = null
-        var currentKey: Long? = null
+        var anchorIndex: Int? = null
+        var lastProcessedIndex: Int? = null
 
         detectDragGesturesAfterLongPress(
             onDragStart = { offset ->
-                lazyGridState.gridItemKeyAtPosition(offset)?.let { key ->
-                    if (currentSelectedImages.none { it.id == key }) {
-                        // 새롭게 선택 상태 업데이트가 필요한 아이템
+                lazyGridState.gridItemInfoAtPosition(offset)?.let { info ->
+                    currentImagesSnapshot.getOrNull(info.index)?.let { image ->
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        initialKey = key
-                        currentKey = key
-                        currentOnSelect(key)
+                        anchorIndex = info.index
+                        lastProcessedIndex = info.index
+                        currentOnBeginDrag(image)
+                        currentOnUpdateRange(listOf(image))
                         currentDragState.value = DragSelectionState(
                             offset = offset,
-                            lastProcessedKey = key,
+                            anchorIndex = info.index,
+                            lastProcessedIndex = info.index,
                         )
                     }
                 }
             },
             onDragCancel = {
-                initialKey = null
-                currentKey = null
+                anchorIndex = null
+                lastProcessedIndex = null
                 autoScrollSpeed.value = 0f
                 currentDragState.value = null
+                currentOnEndDrag()
             },
             onDragEnd = {
-                initialKey = null
-                currentKey = null
+                anchorIndex = null
+                lastProcessedIndex = null
                 autoScrollSpeed.value = 0f
                 currentDragState.value = null
+                currentOnEndDrag()
             },
             onDrag = { change, _ ->
-                if (initialKey != null) {
-                    currentDragState.value = DragSelectionState(
-                        offset = change.position,
-                        lastProcessedKey = currentDragState.value?.lastProcessedKey,
-                    )
+                val anchor = anchorIndex
+                if (anchor != null) {
                     val distFromBottom =
                         lazyGridState.layoutInfo.viewportSize.height - change.position.y
                     val distFromTop = change.position.y
@@ -88,16 +106,17 @@ internal fun Modifier.photoGridDragHandler(
                         distFromTop < autoScrollThreshold -> -(autoScrollThreshold - distFromTop)
                         else -> 0f
                     }
-                    lazyGridState.gridItemKeyAtPosition(change.position)?.let { key ->
-                        if (currentKey != key && currentSelectedImages.none { it.id == key }) {
-                            currentOnSelect(key)
-                            currentKey = key
-                            currentDragState.value = DragSelectionState(
-                                offset = change.position,
-                                lastProcessedKey = key,
-                            )
-                        }
+                    val hitIndex = lazyGridState.gridItemInfoAtPosition(change.position)?.index
+                    if (hitIndex != null && hitIndex != lastProcessedIndex) {
+                        lastProcessedIndex = hitIndex
+                        currentOnUpdateRange(computeDragRange(anchor, hitIndex, currentImagesSnapshot))
                     }
+                    // autoscroll 폴링 루프가 이 좌표를 기준으로 계속 range를 재계산할 수 있도록 항상 최신 offset을 반영
+                    currentDragState.value = DragSelectionState(
+                        offset = change.position,
+                        anchorIndex = anchor,
+                        lastProcessedIndex = lastProcessedIndex,
+                    )
                 }
             }
         )

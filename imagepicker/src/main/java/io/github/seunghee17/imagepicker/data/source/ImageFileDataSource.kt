@@ -230,7 +230,6 @@ internal class ImageFileDataSource(
 
     /**
      * 캐시 파일에 대한 content:// URI를 반환한다.
-     * file:// URI는 API 24+ 에서 앱 간 공유 시 FileUriExposedException을 유발하므로
      * FileProvider를 통해 content:// URI로 변환한다.
      */
     private fun uriForCacheFile(file: File): Uri {

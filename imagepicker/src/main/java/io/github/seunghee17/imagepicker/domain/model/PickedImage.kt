@@ -1,8 +1,10 @@
 package io.github.seunghee17.imagepicker
 
 import android.net.Uri
-import io.github.seunghee17.imagepicker.CropRect
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class PickedImage(
     val originalUri: Uri,
     val editedUri: Uri? = null,
@@ -11,4 +13,4 @@ data class PickedImage(
     val isCropped: Boolean = cropRect != null,  // cropRect가 없어도 true로 명시 가능
     val isVideo: Boolean = false,
     val videoDurationMs: Long = 0L,     // isVideo == true 일 때만 유효 (밀리초)
-)
+) : Parcelable

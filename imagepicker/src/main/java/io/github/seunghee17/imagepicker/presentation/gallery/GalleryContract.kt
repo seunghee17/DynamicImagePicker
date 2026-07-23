@@ -16,6 +16,7 @@ internal interface GalleryContract {
         val maxSelectionCount: Int = 10,
         val showAlbumSelector: Boolean = true,
         val editResults: Map<Long, PickedImage> = emptyMap(),
+        val isAlbumsLoading: Boolean = true,
     ) {
         val isSelectionLimitReached: Boolean
             get() = selectedImages.size >= maxSelectionCount
@@ -28,6 +29,9 @@ internal interface GalleryContract {
         data object Initialize : Intent
         data class SelectAlbum(val album: GalleryAlbum) : Intent
         data class ToggleImageSelection(val image: GalleryImage) : Intent
+        data class BeginDragSelection(val anchorImage: GalleryImage) : Intent
+        data class UpdateDragSelectionRange(val rangeImages: List<GalleryImage>) : Intent
+        data object EndDragSelection : Intent
         data class OnEditResult(val pickedImage: PickedImage) : Intent
         data object Confirm : Intent
         data object Cancel : Intent
