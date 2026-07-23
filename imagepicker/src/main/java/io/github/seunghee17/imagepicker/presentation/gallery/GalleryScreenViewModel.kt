@@ -58,6 +58,11 @@ internal class GalleryScreenViewModel(
     private var albumsObserved = false
     private var pendingCacheClean = false
 
+    // 드래그 range 선택 중에만 쓰이는 임시 상태 (드래그 제스처 시작~종료 스코프)
+    private var dragBaseline: List<GalleryImage>? = null
+    private var dragIsDeselecting = false
+    private var dragLimitSnackbarShown = false
+
     fun handleIntent(intent: GalleryContract.Intent) {
         when (intent) {
             GalleryContract.Intent.Initialize -> {
@@ -70,6 +75,9 @@ internal class GalleryScreenViewModel(
             is GalleryContract.Intent.SelectAlbum ->
                 _state.update { it.copy(selectedAlbum = intent.album) }
             is GalleryContract.Intent.ToggleImageSelection -> toggleSelection(intent.image)
+            is GalleryContract.Intent.BeginDragSelection -> beginDragSelection(intent.anchorImage)
+            is GalleryContract.Intent.UpdateDragSelectionRange -> updateDragSelectionRange(intent.rangeImages)
+            GalleryContract.Intent.EndDragSelection -> endDragSelection()
             is GalleryContract.Intent.OnEditResult -> applyEditResult(intent.pickedImage)
             GalleryContract.Intent.Confirm -> confirmSelection()
             GalleryContract.Intent.Cancel -> cancel()
@@ -110,6 +118,47 @@ internal class GalleryScreenViewModel(
         }
 
         _state.update { it.copy(selectedImages = it.selectedImages + image) }
+    }
+
+    // Google Photos 스타일 드래그 range 선택: 롱프레스한 anchor가 이미 선택되어 있었다면 해제 모드,
+    // 아니라면 선택 모드로 이번 드래그 제스처의 목표 동작을 고정한다.
+    private fun beginDragSelection(anchorImage: GalleryImage) {
+        val current = _state.value
+        dragBaseline = current.selectedImages
+        dragIsDeselecting = current.selectedImages.any { it.id == anchorImage.id }
+        dragLimitSnackbarShown = false
+    }
+
+    // anchor~현재 손가락 위치 사이의 range를 매번 baseline 기준으로 다시 계산한다.
+    // (증분 누적이 아니므로 손가락을 되돌리면 range 밖으로 나간 항목이 자동으로 원상복구된다)
+    private fun updateDragSelectionRange(rangeImages: List<GalleryImage>) {
+        val baseline = dragBaseline ?: return
+        val rangeIds = rangeImages.map { it.id }.toSet()
+
+        val desired = if (dragIsDeselecting) {
+            baseline.filter { it.id !in rangeIds }
+        } else {
+            baseline + rangeImages.filter { image -> baseline.none { it.id == image.id } }
+        }
+
+        val maxCount = _state.value.maxSelectionCount
+        if (desired.size > maxCount) {
+            _state.update { it.copy(selectedImages = desired.take(maxCount)) }
+            if (!dragLimitSnackbarShown) {
+                dragLimitSnackbarShown = true
+                viewModelScope.launch {
+                    _effect.send(GalleryContract.Effect.ShowSelectionLimitSnackbar(maxCount))
+                }
+            }
+        } else {
+            _state.update { it.copy(selectedImages = desired) }
+        }
+    }
+
+    private fun endDragSelection() {
+        dragBaseline = null
+        dragIsDeselecting = false
+        dragLimitSnackbarShown = false
     }
 
     private fun applyEditResult(pickedImage: PickedImage) {

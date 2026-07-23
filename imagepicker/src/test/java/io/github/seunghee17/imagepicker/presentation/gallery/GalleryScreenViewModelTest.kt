@@ -201,6 +201,112 @@ class GalleryScreenViewModelTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Drag range selection (anchor~current, Google Photos style)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `dragging over a row selects the whole range in grid order`() = runTest {
+        val vm = createVm()
+        val images = (1..7L).map { fakeImage(it) }
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[1])) // index 1
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(1, 7))) // index 1..6
+
+        assertEquals(images.subList(1, 7), vm.state.value.selectedImages)
+    }
+
+    @Test
+    fun `reversing drag direction shrinks the range back to baseline`() = runTest {
+        val vm = createVm()
+        val images = (1..7L).map { fakeImage(it) }
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[1]))
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(1, 7)))
+        // 손가락을 되돌려 anchor~index3 까지만 남김
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(1, 4)))
+
+        assertEquals(images.subList(1, 4), vm.state.value.selectedImages)
+    }
+
+    @Test
+    fun `pre-existing tap selections outside the range are preserved during select-mode drag`() = runTest {
+        val vm = createVm()
+        val tapped = fakeImage(100)
+        val images = (1..7L).map { fakeImage(it) }
+        vm.handleIntent(GalleryContract.Intent.ToggleImageSelection(tapped))
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[1]))
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(1, 4)))
+
+        assertTrue(vm.state.value.selectedImages.containsAll(images.subList(1, 4)))
+        assertTrue(vm.state.value.selectedImages.contains(tapped))
+    }
+
+    @Test
+    fun `long-pressing an already-selected image enters drag-deselect mode`() = runTest {
+        val vm = createVm()
+        val images = (1..7L).map { fakeImage(it) }
+        images.forEach { vm.handleIntent(GalleryContract.Intent.ToggleImageSelection(it)) }
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[1]))
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(1, 4)))
+
+        assertEquals(
+            listOf(images[0]) + images.subList(4, 7),
+            vm.state.value.selectedImages,
+        )
+    }
+
+    @Test
+    fun `drag-deselect removes range items even if pre-existing outside this drag`() = runTest {
+        val vm = createVm()
+        val images = (1..20L).map { fakeImage(it) }
+        vm.handleIntent(GalleryContract.Intent.ToggleImageSelection(images[4])) // id=5
+        vm.handleIntent(GalleryContract.Intent.ToggleImageSelection(images[19])) // id=20
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[4]))
+        vm.handleIntent(
+            GalleryContract.Intent.UpdateDragSelectionRange(images.subList(4, 20))
+        )
+
+        assertTrue(vm.state.value.selectedImages.isEmpty())
+    }
+
+    @Test
+    fun `range selection beyond max fills up to the limit and emits snackbar once`() = runTest {
+        val vm = createVm(maxSelectionCount = 10)
+        val images = (1..20L).map { fakeImage(it) }
+        images.subList(0, 8).forEach { vm.handleIntent(GalleryContract.Intent.ToggleImageSelection(it)) }
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[8]))
+        vm.effect.test {
+            vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(8, 11)))
+            val item = awaitItem()
+            assertIs<GalleryContract.Effect.ShowSelectionLimitSnackbar>(item)
+            // 다음 tick에서도 계속 초과 상태라면 스낵바를 다시 보내지 않는다
+            vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(8, 12)))
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(10, vm.state.value.selectedImages.size)
+    }
+
+    @Test
+    fun `ending drag selection allows a fresh drag gesture to start its own baseline`() = runTest {
+        val vm = createVm()
+        val images = (1..7L).map { fakeImage(it) }
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[1]))
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(1, 4)))
+        vm.handleIntent(GalleryContract.Intent.EndDragSelection)
+
+        vm.handleIntent(GalleryContract.Intent.BeginDragSelection(images[4]))
+        vm.handleIntent(GalleryContract.Intent.UpdateDragSelectionRange(images.subList(4, 6)))
+
+        assertEquals(images.subList(1, 4) + images.subList(4, 6), vm.state.value.selectedImages)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Confirm result composition
     // ─────────────────────────────────────────────────────────────────────────
 
